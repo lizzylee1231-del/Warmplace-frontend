@@ -1,0 +1,10 @@
+{
+  "name": "warm-house-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "check": "node --check src/main.js && node --check src/router.js && node --check src/pages/HomePage.js && node --check src/pages/RecordPage.js && node --check src/pages/DashboardPage.js && node --check src/pages/AiReplyPage.js && node --check src/components/BackgroundSoundPicker.js && node --check server.js"
+  }
+}
