@@ -1,13 +1,13 @@
 const SUMMARY_API_URL = "https://warmplace-production.up.railway.app/api/summary";
 
 const ICONS = {
-  home: "/assets/icons/icon-home.png",
-  record: "/assets/icons/icon-record.png",
-  review: "/assets/icons/icon-review.png",
-  music: "/assets/icons/icon-music.png",
-  calendar: "/assets/icons/icon-calendar.png",
-  cup: "/assets/icons/icon-cup.png",
-  heart: "/assets/icons/icon-heart.png",
+  home: "assets/icons/icon-home.png",
+  record: "assets/icons/icon-record.png",
+  review: "assets/icons/icon-review.png",
+  music: "assets/icons/icon-music.png",
+  calendar: "assets/icons/icon-calendar.png",
+  cup: "assets/icons/icon-cup.png",
+  heart: "assets/icons/icon-heart.png",
 };
 
 const MOOD_ICONS = ["😊", "😌", "🙂", "☹", "😟"];

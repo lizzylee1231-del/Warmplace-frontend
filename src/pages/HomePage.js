@@ -1,13 +1,13 @@
 import { BackgroundSoundPicker } from "../components/BackgroundSoundPicker.js";
 
 const ICONS = {
-  home: "/assets/icons/icon-home.png",
-  record: "/assets/icons/icon-record.png",
-  review: "/assets/icons/icon-review.png",
-  music: "/assets/icons/icon-music.png",
-  cup: "/assets/icons/icon-cup.png",
-  lock: "/assets/icons/icon-lock.png",
-  heart: "/assets/icons/icon-heart.png",
+  home: "assets/icons/icon-home.png",
+  record: "assets/icons/icon-record.png",
+  review: "assets/icons/icon-review.png",
+  music: "assets/icons/icon-music.png",
+  cup: "assets/icons/icon-cup.png",
+  lock: "assets/icons/icon-lock.png",
+  heart: "assets/icons/icon-heart.png",
 };
 
 const WEEKDAY_LABELS = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];

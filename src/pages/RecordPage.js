@@ -19,7 +19,7 @@ const SCENE_TAGS = [
 ];
 
 const AI_REQUEST_KEY = "nuanwo_ai_reply_payload";
-const LAMP_ICON = "/assets/icons/icon-lamp.png";
+const LAMP_ICON = "assets/icons/icon-lamp.png";
 
 function renderChoice({ label, icon }, name, selectedValues = []) {
   return `

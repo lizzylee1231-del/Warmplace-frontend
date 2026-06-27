@@ -3,10 +3,10 @@ const AI_API_URL = "https://warmplace-production.up.railway.app/api/ai/analyze";
 const SAVE_RECORD_API_URL = "https://warmplace-production.up.railway.app/api/records";
 
 const ICONS = {
-  heart: "/assets/icons/icon-heart.png",
-  cup: "/assets/icons/icon-cup.png",
-  lamp: "/assets/icons/icon-lamp.png",
-  record: "/assets/icons/icon-record.png",
+  heart: "assets/icons/icon-heart.png",
+  cup: "assets/icons/icon-cup.png",
+  lamp: "assets/icons/icon-lamp.png",
+  record: "assets/icons/icon-record.png",
 };
 
 const DEFAULT_CARE_ITEMS = [

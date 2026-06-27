@@ -97,11 +97,11 @@ button {
 .home-page {
   width: min(100%, 460px);
   padding: 0 0 126px;
-  background-image: url("/assets/backgrounds/bg-home-bedroom-color-matched.webp");
+  background-image: url("../assets/backgrounds/bg-home-bedroom-color-matched.webp");
 }
 
 .record-page {
-  background-image: url("/assets/backgrounds/bg-record-room.webp");
+  background-image: url("../assets/backgrounds/bg-record-room.webp");
 }
 
 .record-page::before {
@@ -115,7 +115,7 @@ button {
 }
 
 .ai-reply-page {
-  background-image: url("/assets/backgrounds/bg-reply-lamp.webp");
+  background-image: url("../assets/backgrounds/bg-reply-lamp.webp");
   background-position: center top;
 }
 
@@ -131,7 +131,7 @@ button {
 
 .dashboard-page {
   width: min(100%, 1120px);
-  background-image: url("/assets/backgrounds/bg-review-room.webp");
+  background-image: url("../assets/backgrounds/bg-review-room.webp");
 }
 
 .review-page::before {

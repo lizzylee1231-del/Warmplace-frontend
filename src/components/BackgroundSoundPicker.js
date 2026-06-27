@@ -1,4 +1,4 @@
-const MUSIC_ICON = "/assets/icons/icon-music.png";
+const MUSIC_ICON = "assets/icons/icon-music.png";
 
 const SOUND_OPTIONS = [
   {
