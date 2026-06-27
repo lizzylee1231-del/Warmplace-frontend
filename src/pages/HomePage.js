@@ -14,7 +14,7 @@ export function HomePage({ navigateTo }) {
       <p class="eyebrow">暖屋</p>
       <h1 id="home-title">给今天的心情留一盏灯</h1>
       <p class="hero-copy">
-        记录这一刻的情绪、强度和触发线索，让日常里的细小变化被温柔地看见。
+        把想说的话放在这里
       </p>
       <div class="home-actions">
         <button class="primary-action" type="button" data-record-entry>
@@ -28,6 +28,25 @@ export function HomePage({ navigateTo }) {
         </button>
       </div>
     </section>
+
+    <nav class="quick-entry-bar" aria-label="快捷入口">
+      <button class="quick-entry is-active" type="button" data-home-entry>
+        <span class="quick-entry-icon" aria-hidden="true">🏠</span>
+        <span>首页</span>
+      </button>
+      <button class="quick-entry" type="button" data-quick-record>
+        <span class="quick-entry-icon" aria-hidden="true">📝</span>
+        <span>记录</span>
+      </button>
+      <button class="quick-entry" type="button" data-quick-dashboard>
+        <span class="quick-entry-icon" aria-hidden="true">📊</span>
+        <span>回顾</span>
+      </button>
+      <button class="quick-entry" type="button" data-quick-music>
+        <span class="quick-entry-icon" aria-hidden="true">🎵</span>
+        <span>音乐</span>
+      </button>
+    </nav>
   `;
 
   page.querySelector("[data-record-entry]").addEventListener("click", () => {
@@ -40,6 +59,22 @@ export function HomePage({ navigateTo }) {
 
   page.querySelector("[data-dashboard-entry]").addEventListener("click", () => {
     navigateTo("/dashboard");
+  });
+
+  page.querySelector("[data-home-entry]").addEventListener("click", () => {
+    navigateTo("/");
+  });
+
+  page.querySelector("[data-quick-record]").addEventListener("click", () => {
+    navigateTo("/record");
+  });
+
+  page.querySelector("[data-quick-dashboard]").addEventListener("click", () => {
+    navigateTo("/dashboard");
+  });
+
+  page.querySelector("[data-quick-music]").addEventListener("click", () => {
+    page.querySelector("[data-sound-toggle]")?.click();
   });
 
   page.append(

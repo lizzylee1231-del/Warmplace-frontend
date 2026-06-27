@@ -1,37 +1,6 @@
-const API_BASE = "https://warmplace-production.up.railway.app";
-const SUMMARY_RANGE = "7d";
+const SUMMARY_API_URL = "https://warmplace-production.up.railway.app/api/summary";
 
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function buildSummaryUrl() {
-  const url = new URL(`${API_BASE}/api/summary`);
-  url.searchParams.set("range", SUMMARY_RANGE);
-  url.searchParams.set("user_id", window.USER_ID);
-  return url.toString();
-}
-
-function EmotionTrendCard({ moodTrend }) {
-  const items = moodTrend.length
-    ? moodTrend
-        .map((point) => {
-          const shortDate = point.date.slice(5);
-          return `
-            <li>
-              <span>${escapeHtml(shortDate)}</span>
-              <strong>${escapeHtml(point.avg_intensity)}</strong>
-            </li>
-          `;
-        })
-        .join("")
-    : `<li><span>暂无数据</span></li>`;
-
+function EmotionTrendCard({ trend }) {
   return `
     <section class="dashboard-card trend-card" aria-labelledby="trend-title">
       <div class="card-heading">
@@ -42,52 +11,53 @@ function EmotionTrendCard({ moodTrend }) {
         情绪趋势图占位
       </div>
       <ul class="trend-list" aria-label="最近情绪分值">
-        ${items}
+        ${
+          trend.length
+            ? trend
+                .map(
+                  (item) => `
+              <li>
+                <span>${item.date}</span>
+                <strong>${item.score}</strong>
+              </li>
+            `,
+                )
+                .join("")
+            : "<li>还没有记录</li>"
+        }
       </ul>
     </section>
   `;
 }
 
-function TagCloudCard({ topEmotions }) {
-  const tags = topEmotions.length
-    ? topEmotions
-        .map((label, index) => {
-          const weight = topEmotions.length - index;
-          return `
-            <span class="dashboard-tag" style="--weight: ${weight}">
-              ${escapeHtml(label)}
-            </span>
-          `;
-        })
-        .join("")
-    : `<p style="margin: 0; color: #5b5350;">还没有足够的情绪标签。</p>`;
-
+function TagCloudCard({ tags }) {
   return `
     <section class="dashboard-card" aria-labelledby="tag-cloud-title">
       <div class="card-heading">
         <p class="eyebrow">标签</p>
-        <h2 id="tag-cloud-title">高频情绪</h2>
+        <h2 id="tag-cloud-title">高频标签云</h2>
       </div>
       <div class="dashboard-tag-cloud">
-        ${tags}
+        ${
+          tags.length
+            ? tags
+                .map(
+                  (tag) => `
+              <span class="dashboard-tag" style="--weight: ${tag.count}">
+                ${tag.label}
+                <small>${tag.count}</small>
+              </span>
+            `,
+                )
+                .join("")
+            : "<span>还没有标签数据</span>"
+        }
       </div>
     </section>
   `;
 }
 
-function HappyMomentCard({ happyMoments }) {
-  const moments = happyMoments.length
-    ? happyMoments
-        .map(
-          (moment) => `
-            <article class="moment-item">
-              <p>${escapeHtml(moment)}</p>
-            </article>
-          `,
-        )
-        .join("")
-    : `<p style="margin: 0; color: #5b5350;">还没有记录到开心时刻。</p>`;
-
+function HappyMomentCard({ moments }) {
   return `
     <section class="dashboard-card" aria-labelledby="happy-moment-title">
       <div class="card-heading">
@@ -95,22 +65,56 @@ function HappyMomentCard({ happyMoments }) {
         <h2 id="happy-moment-title">开心 Moment</h2>
       </div>
       <div class="moment-list">
-        ${moments}
+        ${
+          moments.length
+            ? moments
+                .map(
+                  (moment) => `
+              <article class="moment-item">
+                <h3>${moment.title}</h3>
+                <p>${moment.content}</p>
+              </article>
+            `,
+                )
+                .join("")
+            : "<p>还没有记录开心时刻</p>"
+        }
       </div>
     </section>
   `;
 }
 
-function GrowthSummaryCard({ growthSummary }) {
+function GrowthSummaryCard({ summary }) {
   return `
     <section class="dashboard-card summary-card" aria-labelledby="growth-summary-title">
       <div class="card-heading">
         <p class="eyebrow">小结</p>
-        <h2 id="growth-summary-title">本周成长小结</h2>
+        <h2 id="growth-summary-title">${summary.title}</h2>
       </div>
-      <p>${escapeHtml(growthSummary)}</p>
+      <p>${summary.content}</p>
     </section>
   `;
+}
+
+function mapSummaryToDashboardData(summary) {
+  return {
+    trend: (summary.mood_trend ?? []).map((item) => ({
+      date: item.date,
+      score: item.avg_intensity,
+    })),
+    tags: (summary.top_emotion_counts ?? []).map((item) => ({
+      label: item.label,
+      count: item.count,
+    })),
+    happyMoments: (summary.happy_moments_with_date ?? []).map((item) => ({
+      title: `开心时刻 · ${item.date}`,
+      content: item.content,
+    })),
+    summary: {
+      title: "本周成长小结",
+      content: summary.growth_summary ?? "还没有足够的记录，多记录几次后我们会帮你看见变化。",
+    },
+  };
 }
 
 export function DashboardPage({ navigateTo }) {
@@ -124,88 +128,54 @@ export function DashboardPage({ navigateTo }) {
       <button class="ghost-button" type="button" data-back-home>返回首页</button>
       <div>
         <p class="eyebrow">疗愈小屋</p>
-        <h1>回顾这一段心情路径</h1>
+        <h1>我一直都在这</h1>
       </div>
     </header>
 
-    <div data-loading style="display: flex; align-items: center; gap: 10px; color: #2b5960; font-weight: 800;">
-      正在加载这段时间的记录...
+    <div class="dashboard-grid" data-dashboard-grid>
+      <p data-dashboard-loading>正在加载你的回顾数据...</p>
     </div>
-
-    <div
-      data-error
-      hidden
-      style="display: grid; gap: 12px; color: #8a2f20;"
-    >
-      <p data-error-text style="margin: 0;"></p>
-      <button class="secondary-action" type="button" data-retry style="justify-self: start;">
-        重试加载
-      </button>
-    </div>
-
-    <div data-dashboard-grid class="dashboard-grid" hidden></div>
   `;
 
   page.querySelector("[data-back-home]").addEventListener("click", () => {
     navigateTo("/");
   });
 
-  const loading = page.querySelector("[data-loading]");
-  const error = page.querySelector("[data-error]");
-  const errorText = page.querySelector("[data-error-text]");
-  const retryButton = page.querySelector("[data-retry]");
-  const grid = page.querySelector("[data-dashboard-grid]");
-
-  function setElementVisible(element, isVisible, visibleDisplay = "") {
-    element.hidden = !isVisible;
-    element.style.display = isVisible ? visibleDisplay : "none";
-  }
-
   async function loadSummary() {
-    setElementVisible(error, false);
-    setElementVisible(grid, false);
-    setElementVisible(loading, true, "flex");
+    const grid = page.querySelector("[data-dashboard-grid]");
 
     try {
-      const response = await fetch(buildSummaryUrl(), {
-        signal: abortController.signal,
-      });
+      const response = await fetch(
+        `${SUMMARY_API_URL}?range=7d&user_id=${encodeURIComponent(window.USER_ID ?? "")}`,
+        { signal: abortController.signal },
+      );
 
       if (!response.ok) {
         throw new Error(`请求失败：${response.status}`);
       }
 
-      const data = await response.json();
+      const summary = await response.json();
 
       if (!isActive) {
         return;
       }
 
-      grid.innerHTML = [
-        EmotionTrendCard({ moodTrend: data.mood_trend ?? [] }),
-        TagCloudCard({ topEmotions: data.top_emotions ?? [] }),
-        HappyMomentCard({ happyMoments: data.happy_moments ?? [] }),
-        GrowthSummaryCard({ growthSummary: data.growth_summary ?? "" }),
-      ].join("");
+      const dashboardData = mapSummaryToDashboardData(summary);
 
-      setElementVisible(grid, true, "grid");
-    } catch (requestError) {
-      if (!isActive || requestError.name === "AbortError") {
+      grid.innerHTML = `
+        ${EmotionTrendCard({ trend: dashboardData.trend })}
+        ${TagCloudCard({ tags: dashboardData.tags })}
+        ${HappyMomentCard({ moments: dashboardData.happyMoments })}
+        ${GrowthSummaryCard({ summary: dashboardData.summary })}
+      `;
+    } catch (loadError) {
+      if (!isActive || loadError.name === "AbortError") {
         return;
       }
 
-      errorText.textContent = requestError.message || "加载失败，请稍后重试。";
-      setElementVisible(error, true, "grid");
-    } finally {
-      if (isActive) {
-        setElementVisible(loading, false);
-      }
+      grid.innerHTML = `<p>加载回顾数据失败，请稍后重试。</p>`;
     }
   }
-
-  retryButton.addEventListener("click", () => {
-    loadSummary();
-  });
 
   page.destroy = () => {
     isActive = false;
@@ -213,5 +183,6 @@ export function DashboardPage({ navigateTo }) {
   };
 
   loadSummary();
+
   return page;
 }

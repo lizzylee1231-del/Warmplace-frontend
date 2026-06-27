@@ -63,6 +63,7 @@ button {
 .home-page {
   display: grid;
   align-items: center;
+  padding-bottom: 126px;
 }
 
 .home-hero {
@@ -95,6 +96,49 @@ h1 {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+.quick-entry-bar {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  left: 24px;
+  z-index: 8;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  width: min(520px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 12px;
+  border: 1px solid rgba(82, 72, 68, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 253, 249, 0.9);
+  box-shadow: 0 18px 42px rgba(68, 54, 48, 0.16);
+  backdrop-filter: blur(10px);
+}
+
+.quick-entry {
+  display: grid;
+  gap: 5px;
+  min-height: 62px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #514947;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.quick-entry:hover,
+.quick-entry.is-active {
+  background: rgba(189, 91, 57, 0.1);
+  color: #8a4b35;
+}
+
+.quick-entry-icon {
+  font-size: 1.55rem;
+  line-height: 1;
 }
 
 .primary-action,
@@ -412,5 +456,12 @@ input:focus-visible {
   .dashboard-grid,
   .trend-list {
     grid-template-columns: 1fr;
+  }
+
+  .quick-entry-bar {
+    right: 14px;
+    bottom: 14px;
+    left: 14px;
+    width: calc(100% - 28px);
   }
 }

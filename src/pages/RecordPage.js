@@ -4,24 +4,27 @@ const AI_REQUEST_KEY = "nuanwo_ai_reply_payload";
 export function RecordPage({ navigateTo, query }) {
   const page = document.createElement("main");
   page.className = "page record-page";
-  const selectedTags = query?.get("mood") === "happy" ? ["开心"] : [];
+  const isHappyMood = query?.get("mood") === "happy";
+  const selectedTags = isHappyMood ? ["开心"] : [];
+  const defaultIntensity = isHappyMood ? 5 : 3;
 
   page.innerHTML = `
     <header class="page-header">
       <button class="ghost-button" type="button" data-back-home>返回首页</button>
       <div>
         <p class="eyebrow">情绪记录</p>
-        <h1>今天发生了什么？</h1>
+        <h1>今天过得怎么样</h1>
       </div>
     </header>
 
     <form class="record-form" data-record-form>
       <label class="field">
-        <span>情绪描述</span>
+        <span>今天过得怎么样</span>
         <textarea
           name="note"
           rows="5"
-          placeholder="写下此刻的感受、事件或身体反应"
+          placeholder="写下此刻的想法和感受吧~
+随便写写、乱一点也没关系"
           required
         ></textarea>
       </label>
@@ -48,13 +51,13 @@ export function RecordPage({ navigateTo, query }) {
       <label class="field range-field">
         <span>情绪强度</span>
         <div class="range-row">
-          <input name="intensity" type="range" min="1" max="5" value="3" data-intensity />
-          <output data-intensity-output>3</output>
+          <input name="intensity" type="range" min="1" max="5" value="${defaultIntensity}" data-intensity />
+          <output data-intensity-output>${defaultIntensity}</output>
         </div>
       </label>
 
       <button class="primary-action form-action" type="submit">
-        保存记录
+        让它陪我待一会儿
       </button>
     </form>
   `;

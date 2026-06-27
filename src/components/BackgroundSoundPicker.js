@@ -35,7 +35,7 @@ export function BackgroundSoundPicker({ onChange }) {
   const container = document.createElement("div");
   container.style.position = "fixed";
   container.style.right = "24px";
-  container.style.bottom = "24px";
+  container.style.bottom = "112px";
   container.style.zIndex = "10";
 
   let selectedSound = null;
