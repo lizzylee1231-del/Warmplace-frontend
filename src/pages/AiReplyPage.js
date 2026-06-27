@@ -2,6 +2,20 @@ const AI_REQUEST_KEY = "nuanwo_ai_reply_payload";
 const AI_API_URL = "https://warmplace-production.up.railway.app/api/ai/analyze";
 const SAVE_RECORD_API_URL = "https://warmplace-production.up.railway.app/api/records";
 
+const ICONS = {
+  heart: "/assets/icons/icon-heart.png",
+  cup: "/assets/icons/icon-cup.png",
+  lamp: "/assets/icons/icon-lamp.png",
+  record: "/assets/icons/icon-record.png",
+};
+
+const DEFAULT_CARE_ITEMS = [
+  "给自己 10 分钟，做一次深呼吸",
+  "把想说的话写下来，交给纸张",
+  "今晚早点休息，身体也需要被照顾",
+  "可以听听喜欢的音乐，或慢慢散步",
+];
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -9,57 +23,6 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
-}
-
-function renderMarkdown(markdown) {
-  const lines = escapeHtml(markdown).split("\n");
-  const html = [];
-  let listOpen = false;
-
-  // 简易 Markdown 渲染：支持标题、无序列表、加粗和普通段落，避免新增第三方库。
-  lines.forEach((line) => {
-    const trimmed = line.trim();
-
-    if (!trimmed) {
-      if (listOpen) {
-        html.push("</ul>");
-        listOpen = false;
-      }
-      return;
-    }
-
-    const withBold = trimmed.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
-
-    if (withBold.startsWith("### ")) {
-      if (listOpen) {
-        html.push("</ul>");
-        listOpen = false;
-      }
-      html.push(`<h3 style="margin: 20px 0 8px; font-size: 1.1rem;">${withBold.slice(4)}</h3>`);
-      return;
-    }
-
-    if (withBold.startsWith("- ")) {
-      if (!listOpen) {
-        html.push('<ul style="display: grid; gap: 8px; margin: 8px 0 0; padding-left: 20px;">');
-        listOpen = true;
-      }
-      html.push(`<li>${withBold.slice(2)}</li>`);
-      return;
-    }
-
-    if (listOpen) {
-      html.push("</ul>");
-      listOpen = false;
-    }
-    html.push(`<p style="margin: 0 0 12px;">${withBold}</p>`);
-  });
-
-  if (listOpen) {
-    html.push("</ul>");
-  }
-
-  return html.join("");
 }
 
 async function saveRecord(payload, aiData) {
@@ -84,7 +47,6 @@ async function saveRecord(payload, aiData) {
       }),
     });
   } catch (saveError) {
-    // 保存失败不影响当前页面已经展示的 AI 回复，只在控制台留个痕迹方便排查。
     console.error("save record failed", saveError);
   }
 }
@@ -98,26 +60,28 @@ function readStoredPayload() {
   }
 }
 
-function formatAiJson(data) {
-  const emotions = data.ai_observed_emotions ?? [];
+function splitCareTips(tips) {
+  if (!tips) {
+    return DEFAULT_CARE_ITEMS;
+  }
 
-  // 后端当前返回 JSON，字段名对应 ai_observed_emotions / ai_summary / ai_self_care_tips / ai_closing_message。
-  return [
-    "### 情绪观察",
-    emotions.length ? emotions.map((item) => `- ${item}`).join("\n") : "- 暂时没有识别到明确情绪",
-    "",
-    "### 怎么回事",
-    data.ai_summary ?? "这是一条值得被认真看见的情绪记录。",
-    "",
-    "### 自我关怀建议",
-    data.ai_self_care_tips ?? "先慢慢呼吸一下，把此刻的感受照顾好。",
-    "",
-    data.ai_closing_message ?? "",
-  ].join("\n");
+  const parsedTips = String(tips)
+    .split(/\n|。|；|;/)
+    .map((item) => item.replace(/^[-\d.\s、]+/, "").trim())
+    .filter(Boolean)
+    .slice(0, 4);
+
+  return parsedTips.length ? parsedTips : DEFAULT_CARE_ITEMS;
+}
+
+function formatMainReply(data) {
+  const summary = data.ai_summary ?? "这些感受值得被认真看见，也不需要立刻被整理得很完美。";
+  const closing = data.ai_closing_message ?? "今晚先把自己放回暖窝里，慢慢呼吸一下，我们明天再一点点靠近它。";
+
+  return [summary, closing].filter(Boolean).join("\n\n");
 }
 
 function extractChunkText(chunk) {
-  // 兼容未来后端返回 SSE：优先解析 data: 行，解析失败时按普通文本追加。
   const events = chunk
     .split("\n")
     .map((line) => line.trim())
@@ -141,6 +105,19 @@ function extractChunkText(chunk) {
     .join("");
 }
 
+function renderCareItems(items) {
+  return items
+    .map(
+      (item, index) => `
+        <li>
+          <span class="care-bullet" aria-hidden="true">${["☺", "✦", "☁", "♪"][index] ?? "✦"}</span>
+          <span>${escapeHtml(item)}</span>
+        </li>
+      `,
+    )
+    .join("");
+}
+
 export function AiReplyPage({ navigateTo }) {
   const page = document.createElement("main");
   page.className = "page ai-reply-page";
@@ -149,89 +126,57 @@ export function AiReplyPage({ navigateTo }) {
   let isActive = true;
 
   page.innerHTML = `
-    <section
-      style="
-        display: grid;
-        gap: 24px;
-        max-width: 820px;
-        margin: 0 auto;
-      "
-    >
-      <header class="page-header" style="margin-bottom: 0;">
-        <button class="ghost-button" type="button" data-back-record>返回记录页</button>
-        <div>
-          <p class="eyebrow">AI 陪伴回复</p>
-          <h1>给这一刻一点温柔回应</h1>
-        </div>
-      </header>
+    <header class="ai-topbar">
+      <button class="ai-back-button" type="button" data-back-record aria-label="返回记录页">
+        <span aria-hidden="true">←</span>
+      </button>
+      <h1>我都听到了哦</h1>
+      <span class="ai-status-icons" aria-hidden="true"></span>
+    </header>
 
-      <div
-        data-empty-state
-        hidden
-        style="
-          padding: 24px;
-          border: 1px solid rgba(82, 72, 68, 0.12);
-          border-radius: 8px;
-          background: rgba(255, 255, 255, 0.68);
-          color: #5b5350;
-        "
-      >
-        暂时没有可分析的记录。请先回到记录页写下一条情绪记录。
+    <section class="ai-reply-layout">
+      <div class="empty-state ai-empty-state" data-empty-state hidden>
+        暂时没有可分析的记录。请先回到记录页，写下一条情绪记录。
       </div>
 
-      <article
-        data-message-card
-        style="
-          display: grid;
-          gap: 16px;
-          min-height: 360px;
-          padding: 28px;
-          border: 1px solid rgba(82, 72, 68, 0.12);
-          border-radius: 8px;
-          background: rgba(255, 255, 255, 0.7);
-          box-shadow: 0 18px 42px rgba(68, 54, 48, 0.1);
-        "
-      >
-        <div
-          data-loading
-          style="
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #2b5960;
-            font-weight: 800;
-          "
-        >
-          <span
-            style="
-              width: 10px;
-              height: 10px;
-              border-radius: 999px;
-              background: #2b6b74;
-              box-shadow: 16px 0 0 rgba(43, 107, 116, 0.5), 32px 0 0 rgba(43, 107, 116, 0.22);
-            "
-          ></span>
-          正在生成回复...
+      <article class="ai-message-card ai-pixel-card" data-message-card>
+        <img class="ai-card-heart ai-card-heart-start" src="${ICONS.heart}" alt="" aria-hidden="true" />
+        <div class="loading-row" data-loading>
+          <span class="loading-dots" aria-hidden="true"></span>
+          正在生成回应...
         </div>
 
-        <div
-          data-message
-          style="
-            overflow: auto;
-            max-height: 52vh;
-            color: #3b3330;
-            font-size: 1rem;
-            line-height: 1.75;
-          "
-        ></div>
+        <div class="ai-message" data-message></div>
 
-        <div data-error hidden style="display: grid; gap: 12px; color: #8a2f20;">
-          <p data-error-text style="margin: 0;"></p>
-          <button class="secondary-action" type="button" data-retry style="justify-self: start;">
+        <div class="error-state" data-error hidden>
+          <p data-error-text></p>
+          <button class="ai-action-button ai-action-light" type="button" data-retry>
             重试生成
           </button>
         </div>
+        <img class="ai-card-heart ai-card-heart-end" src="${ICONS.heart}" alt="" aria-hidden="true" />
       </article>
+
+      <aside class="ai-care-card ai-pixel-card" aria-labelledby="care-title">
+        <h2 id="care-title">
+          <img src="${ICONS.cup}" alt="" aria-hidden="true" />
+          照顾自己
+        </h2>
+        <ul data-care-list>
+          ${renderCareItems(DEFAULT_CARE_ITEMS)}
+        </ul>
+      </aside>
+
+      <div class="ai-action-row">
+        <button class="ai-action-button ai-action-light" type="button" data-back-record-secondary>
+          <img src="${ICONS.record}" alt="" aria-hidden="true" />
+          还有想说的
+        </button>
+        <button class="ai-action-button ai-action-red" type="button" data-save-moment>
+          <span aria-hidden="true">▣</span>
+          留住此刻
+        </button>
+      </div>
     </section>
   `;
 
@@ -243,6 +188,7 @@ export function AiReplyPage({ navigateTo }) {
   const error = page.querySelector("[data-error]");
   const errorText = page.querySelector("[data-error-text]");
   const retryButton = page.querySelector("[data-retry]");
+  const careList = page.querySelector("[data-care-list]");
 
   let fullText = "";
 
@@ -256,12 +202,15 @@ export function AiReplyPage({ navigateTo }) {
       return;
     }
 
-    message.innerHTML = renderMarkdown(fullText);
+    message.innerHTML = escapeHtml(fullText)
+      .split("\n")
+      .filter(Boolean)
+      .map((line) => `<p>${line}</p>`)
+      .join("");
     message.scrollTop = message.scrollHeight;
   }
 
   async function appendWithTypewriter(text) {
-    // 打字机效果：无论后端是流式 chunk 还是普通 JSON，都逐字追加到消息区。
     for (const char of text) {
       if (!isActive) {
         return;
@@ -319,7 +268,8 @@ export function AiReplyPage({ navigateTo }) {
       if (contentType.includes("application/json")) {
         const data = await response.json();
         saveRecord(payload, data);
-        await appendWithTypewriter(formatAiJson(data));
+        careList.innerHTML = renderCareItems(splitCareTips(data.ai_self_care_tips));
+        await appendWithTypewriter(formatMainReply(data));
         return;
       }
 
@@ -352,6 +302,14 @@ export function AiReplyPage({ navigateTo }) {
 
   page.querySelector("[data-back-record]").addEventListener("click", () => {
     navigateTo("/record");
+  });
+
+  page.querySelector("[data-back-record-secondary]").addEventListener("click", () => {
+    navigateTo("/record");
+  });
+
+  page.querySelector("[data-save-moment]").addEventListener("click", () => {
+    navigateTo("/dashboard");
   });
 
   retryButton.addEventListener("click", () => {

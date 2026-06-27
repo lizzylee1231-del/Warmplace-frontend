@@ -10,6 +10,8 @@ const contentTypes = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
+  ".png": "image/png",
+  ".webp": "image/webp",
 };
 
 const server = createServer(async (request, response) => {
@@ -20,7 +22,10 @@ const server = createServer(async (request, response) => {
       pathname = "/index.html";
     }
 
-    const filePath = resolve(root, `.${pathname}`);
+    const servedPath = pathname.startsWith("/assets/")
+      ? `/public${pathname}`
+      : pathname;
+    const filePath = resolve(root, `.${servedPath}`);
     const relativePath = relative(root, filePath);
 
     if (relativePath.startsWith("..") || isAbsolute(relativePath)) {
