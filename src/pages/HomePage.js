@@ -3,6 +3,13 @@ import { BackgroundSoundPicker } from "../components/BackgroundSoundPicker.js";
 const DEFAULT_BACKGROUND =
   "linear-gradient(135deg, rgba(232, 139, 92, 0.2), transparent 32%), linear-gradient(315deg, rgba(91, 141, 146, 0.22), transparent 34%), #f7f3ed";
 
+const WEEKDAY_LABELS = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+
+function formatTodayLabel() {
+  const today = new Date();
+  return `${today.getMonth() + 1}月${today.getDate()}日 ${WEEKDAY_LABELS[today.getDay()]}`;
+}
+
 export function HomePage({ navigateTo }) {
   const page = document.createElement("main");
   page.className = "page home-page";
@@ -10,24 +17,47 @@ export function HomePage({ navigateTo }) {
   page.style.transition = "background 240ms ease";
 
   page.innerHTML = `
-    <section class="home-hero" aria-labelledby="home-title">
-      <p class="eyebrow">暖屋</p>
-      <h1 id="home-title">给今天的心情留一盏灯</h1>
-      <p class="hero-copy">
-        把想说的话放在这里
-      </p>
-      <div class="home-actions">
-        <button class="primary-action" type="button" data-record-entry>
-          记录今天的情绪
+    <section class="home-hero-banner" aria-labelledby="home-title">
+      <p class="home-hero-icon" aria-hidden="true">🏠</p>
+      <h1 id="home-title">暖窝</h1>
+      <p class="hero-copy">把想说的话放在这里</p>
+    </section>
+
+    <div class="home-cards">
+      <article class="today-card" aria-labelledby="today-card-title">
+        <div class="today-card-icon" aria-hidden="true">🏮</div>
+        <div class="today-card-body">
+          <div class="today-card-heading">
+            <span id="today-card-title">今日状态</span>
+            <time>${formatTodayLabel()}</time>
+          </div>
+          <p class="today-card-mood">先看看，给自己一点温柔 🌙</p>
+          <button class="today-card-action" type="button" data-record-entry>
+            <span>记录此刻的感受</span>
+            <span aria-hidden="true">›</span>
+          </button>
+        </div>
+      </article>
+
+      <div class="home-cards-row">
+        <button class="home-tile" type="button" data-dashboard-entry>
+          <h3>近7天回顾</h3>
+          <p>看看情绪的变化趋势</p>
+          <span class="home-tile-glyph" aria-hidden="true">📈</span>
         </button>
-        <button class="secondary-action" type="button" data-happy-entry>
-          😊 记录开心 Moment
-        </button>
-        <button class="secondary-action" type="button" data-dashboard-entry>
-          查看疗愈回顾
+        <button class="home-tile" type="button" data-happy-entry>
+          <h3>开心 moment</h3>
+          <p>收集生活里的小确幸</p>
+          <span class="home-tile-glyph" aria-hidden="true">☕</span>
         </button>
       </div>
-    </section>
+
+      <button class="home-privacy-row" type="button" data-privacy-row disabled>
+        <span aria-hidden="true">🔒</span>
+        <span>隐私与安全</span>
+        <span aria-hidden="true">›</span>
+      </button>
+    </div>
 
     <nav class="quick-entry-bar" aria-label="快捷入口">
       <button class="quick-entry is-active" type="button" data-home-entry>
