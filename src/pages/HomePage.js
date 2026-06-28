@@ -25,22 +25,20 @@ export function HomePage({ navigateTo }) {
     <section class="home-hero-banner" aria-labelledby="home-title">
       <img class="home-hero-icon pixel-icon pixel-icon-lg" src="${ICONS.home}" alt="" aria-hidden="true" />
       <h1 id="home-title">暖窝</h1>
-      <p class="hero-copy">把想说的话，先放在一个安全的地方。</p>
     </section>
 
     <div class="home-cards">
-      <article class="today-card" aria-labelledby="today-card-title">
+      <article class="today-card" aria-label="今日状态">
         <div class="today-card-icon" aria-hidden="true">
           <img class="pixel-icon" src="${ICONS.cup}" alt="" />
         </div>
         <div class="today-card-body">
-          <div class="today-card-heading">
-            <span id="today-card-title">今日状态</span>
+          <div class="today-card-heading today-card-heading-date-only">
             <time>${formatTodayLabel()}</time>
           </div>
-          <p class="today-card-mood">先看见自己，再慢慢照顾自己。</p>
+          <p class="today-card-mood">把想说的话放在这里</p>
           <button class="today-card-action" type="button" data-record-entry>
-            <span>记录此刻的感受</span>
+            <span>点击记录</span>
             <span aria-hidden="true">→</span>
           </button>
         </div>
