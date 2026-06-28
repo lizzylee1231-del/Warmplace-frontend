@@ -1,12 +1,12 @@
 const EMOTION_TAGS = [
-  { label: "焦虑", icon: "🌺" },
-  { label: "疲惫", icon: "😊" },
-  { label: "难过", icon: "☹" },
-  { label: "压力大", icon: "☹" },
-  { label: "平静", icon: "☺" },
-  { label: "开心", icon: "☺" },
-  { label: "孤独", icon: "☹" },
-  { label: "其他", icon: "…" },
+  { label: "焦虑", icon: "😣" },
+  { label: "疲惫", icon: "😮‍💨" },
+  { label: "难过", icon: "🙁" },
+  { label: "压力大", icon: "😵‍💫" },
+  { label: "平静", icon: "🙂" },
+  { label: "开心", icon: "🥳" },
+  { label: "孤独", icon: "😔" },
+  { label: "其它", icon: "…" },
 ];
 
 const SCENE_TAGS = [
@@ -15,7 +15,7 @@ const SCENE_TAGS = [
   { label: "亲密关系", icon: "💗" },
   { label: "家庭", icon: "🏠" },
   { label: "独处", icon: "🌿" },
-  { label: "其他", icon: "…" },
+  { label: "其它", icon: "…" },
 ];
 
 const AI_REQUEST_KEY = "nuanwo_ai_reply_payload";
@@ -67,7 +67,7 @@ export function RecordPage({ navigateTo, query }) {
       <button class="record-back-button" type="button" data-back-home aria-label="返回首页">
         <span aria-hidden="true">←</span>
       </button>
-      <h1>此刻的心事</h1>
+      <h1>今天过得怎么样</h1>
       <img class="record-top-icon" src="${LAMP_ICON}" alt="" aria-hidden="true" />
     </header>
 
@@ -76,7 +76,7 @@ export function RecordPage({ navigateTo, query }) {
         <textarea
           name="note"
           maxlength="800"
-          placeholder="把此刻的想法和感受写下来吧...&#10;此刻的你，不需要完美表达"
+          placeholder="写下此刻的想法和感受吧~&#10;随便写写、乱一点也没关系😊"
           required
           data-note
         ></textarea>
@@ -114,7 +114,7 @@ export function RecordPage({ navigateTo, query }) {
 
       <button class="record-submit" type="submit">
         <span aria-hidden="true">✦</span>
-        让我们一起走近情绪
+        让它陪我待一会儿
         <span aria-hidden="true">✦</span>
       </button>
     </form>

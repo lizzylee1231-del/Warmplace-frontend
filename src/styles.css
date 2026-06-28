@@ -732,13 +732,17 @@ input:focus-visible,
   width: 20px;
   height: 20px;
   place-items: center;
-  border: 2px solid #7b3a21;
+  border: 0;
   border-radius: 999px;
-  background: #fff4cd;
+  background: transparent;
   color: #935643;
-  font-size: 0.72rem;
+  font-size: 1rem;
   line-height: 1;
   box-shadow: none;
+}
+
+.scene-grid .record-choice > span {
+  border-color: transparent;
 }
 
 .record-choice input:checked + span {
