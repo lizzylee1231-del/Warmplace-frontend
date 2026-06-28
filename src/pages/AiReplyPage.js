@@ -108,9 +108,9 @@ function extractChunkText(chunk) {
 function renderCareItems(items) {
   return items
     .map(
-      (item, index) => `
+      (item) => `
         <li>
-          <span class="care-bullet" aria-hidden="true">${["☺", "✦", "☁", "♪"][index] ?? "✦"}</span>
+          <span class="care-bullet" aria-hidden="true">🍃</span>
           <span>${escapeHtml(item)}</span>
         </li>
       `,
