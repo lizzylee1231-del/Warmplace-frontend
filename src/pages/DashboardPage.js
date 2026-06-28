@@ -10,8 +10,37 @@ const ICONS = {
   heart: "assets/icons/icon-heart.png",
 };
 
-const MOOD_ICONS = ["😊", "😌", "🙂", "☹", "😟"];
-const SCENE_ICONS = ["💻", "💗", "👥", "🌿", "🏠"];
+const CHART_MOOD_ICONS = ["🥳", "😊", "🙂", "😣", "😵‍💫"];
+const MOOD_ICON_MAP = {
+  焦虑: "😣",
+  疲惫: "😮‍💨",
+  难过: "🙁",
+  压力大: "😵‍💫",
+  平静: "🙂",
+  开心: "🥳",
+  其它: "…",
+};
+const SCENE_ICON_MAP = {
+  "工作/学习": "💻",
+  人际关系: "👥",
+  亲密关系: "💗",
+  家庭: "🏠",
+  独处: "🌿",
+  其它: "…",
+};
+const MOOD_ALIASES = {
+  其他: "其它",
+  烦躁: "焦虑",
+  自责: "难过",
+  委屈: "难过",
+  孤独: "难过",
+};
+const SCENE_ALIASES = {
+  其他: "其它",
+  日常: "其它",
+  日常记录: "其它",
+  关系: "人际关系",
+};
 
 function formatShortDate(value) {
   if (!value) {
@@ -63,7 +92,7 @@ function buildTrendSvg(trend) {
         ${coords.map((point) => `<line x1="${point.x}" y1="${chartTop}" x2="${point.x}" y2="${chartTop + chartHeight}" />`).join("")}
       </g>
       <g class="chart-moods">
-        ${MOOD_ICONS.map((icon, index) => `<text x="12" y="${chartTop + 12 + index * 20}">${icon}</text>`).join("")}
+        ${CHART_MOOD_ICONS.map((icon, index) => `<text x="12" y="${chartTop + 12 + index * 20}">${icon}</text>`).join("")}
       </g>
       <polyline class="chart-line" points="${polyline}" />
       ${coords.map((point) => `<circle class="chart-dot" cx="${point.x}" cy="${point.y}" r="5" />`).join("")}
@@ -72,13 +101,18 @@ function buildTrendSvg(trend) {
   `;
 }
 
-function topItems(items, fallback) {
-  const normalized = items
+function topItems(items, fallback, iconMap, aliases = {}) {
+  const counts = new Map();
+
+  items
     .filter((item) => item.label)
-    .map((item) => ({
-      label: item.label,
-      count: Number(item.count) || 0,
-    }))
+    .forEach((item) => {
+      const rawLabel = item.label;
+      const label = aliases[rawLabel] ?? (iconMap[rawLabel] ? rawLabel : "其它");
+      counts.set(label, (counts.get(label) || 0) + (Number(item.count) || 0));
+    });
+
+  const normalized = Array.from(counts, ([label, count]) => ({ label, count }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
 
@@ -102,7 +136,6 @@ function SummaryCard({ summary }) {
 
 function HappyMomentCard({ moments }) {
   const count = moments.length;
-  const moment = moments[0];
   return `
     <section class="review-card moment-summary-card" aria-labelledby="happy-title">
       <div>
@@ -110,7 +143,7 @@ function HappyMomentCard({ moments }) {
           <h2 id="happy-title">开心 moment</h2>
           <strong>${count || 0}件</strong>
         </div>
-        <p>${moment ? moment.content : "小确幸是生活给你的礼物 ✨"}</p>
+        <p>小确幸是生活给你的礼物 ✨</p>
       </div>
       <div class="moment-cup" aria-hidden="true">
         <img src="${ICONS.cup}" alt="" />
@@ -131,18 +164,18 @@ function TrendCard({ trend }) {
 
 function ListsCard({ moods, scenes }) {
   const moodItems = topItems(moods, [
-    { label: "疲惫", count: 5 },
     { label: "焦虑", count: 4 },
-    { label: "自责", count: 3 },
-    { label: "委屈", count: 2 },
+    { label: "疲惫", count: 3 },
+    { label: "难过", count: 2 },
+    { label: "压力大", count: 2 },
     { label: "平静", count: 2 },
-  ]);
+  ], MOOD_ICON_MAP, MOOD_ALIASES);
   const sceneItems = topItems(scenes, [
     { label: "工作/学习", count: 5 },
     { label: "人际关系", count: 3 },
     { label: "亲密关系", count: 2 },
     { label: "独处", count: 2 },
-  ]);
+  ], SCENE_ICON_MAP, SCENE_ALIASES);
 
   return `
     <section class="review-lists">
@@ -153,7 +186,7 @@ function ListsCard({ moods, scenes }) {
             .map(
               (item, index) => `
                 <li>
-                  <span>${MOOD_ICONS[index] ?? "☺"} ${item.label}</span>
+                  <span>${MOOD_ICON_MAP[item.label] ?? MOOD_ICON_MAP["其它"]} ${item.label}</span>
                   <strong>${item.count}次</strong>
                 </li>
               `,
@@ -168,7 +201,7 @@ function ListsCard({ moods, scenes }) {
             .map(
               (item, index) => `
                 <li>
-                  <span>${SCENE_ICONS[index] ?? "✦"} ${item.label}</span>
+                  <span>${SCENE_ICON_MAP[item.label] ?? SCENE_ICON_MAP["其它"]} ${item.label}</span>
                   <strong>${item.count}次</strong>
                 </li>
               `,
