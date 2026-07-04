@@ -5,6 +5,7 @@ const ICONS = {
   record: "assets/icons/icon-record.png",
   review: "assets/icons/icon-review.png",
   music: "assets/icons/icon-music.png",
+  feedback: "assets/icons/icon-heart.png",
   cup: "assets/icons/icon-cup.png",
   lock: "assets/icons/icon-lock.png",
   heart: "assets/icons/icon-heart.png",
@@ -77,9 +78,9 @@ export function HomePage({ navigateTo }) {
         <img class="quick-entry-icon pixel-icon" src="${ICONS.review}" alt="" aria-hidden="true" />
         <span>回顾</span>
       </button>
-      <button class="quick-entry" type="button" data-quick-music>
-        <img class="quick-entry-icon pixel-icon" src="${ICONS.music}" alt="" aria-hidden="true" />
-        <span>音乐</span>
+      <button class="quick-entry" type="button" data-quick-feedback>
+        <img class="quick-entry-icon pixel-icon" src="${ICONS.feedback}" alt="" aria-hidden="true" />
+        <span>反馈</span>
       </button>
     </nav>
   `;
@@ -108,8 +109,8 @@ export function HomePage({ navigateTo }) {
     navigateTo("/dashboard");
   });
 
-  page.querySelector("[data-quick-music]").addEventListener("click", () => {
-    page.querySelector("[data-sound-toggle]")?.click();
+  page.querySelector("[data-quick-feedback]").addEventListener("click", () => {
+    window.location.href = "https://wpfeedback.netlify.app/";
   });
 
   page.append(

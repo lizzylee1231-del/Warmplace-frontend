@@ -3,6 +3,7 @@ import { HomePage } from "./pages/HomePage.js";
 import { RecordPage } from "./pages/RecordPage.js";
 import { DashboardPage } from "./pages/DashboardPage.js";
 import { AiReplyPage } from "./pages/AiReplyPage.js";
+import { CalendarPage } from "./pages/CalendarPage.js";
 
 const USER_ID_STORAGE_KEY = "nuanwo_user_id";
 
@@ -41,6 +42,7 @@ const router = createRouter({
     "/record": RecordPage,
     "/dashboard": DashboardPage,
     "/ai-reply": AiReplyPage,
+    "/calendar": CalendarPage,
   },
 });
 

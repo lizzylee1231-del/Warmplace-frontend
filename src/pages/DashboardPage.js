@@ -5,6 +5,7 @@ const ICONS = {
   record: "assets/icons/icon-record.png",
   review: "assets/icons/icon-review.png",
   music: "assets/icons/icon-music.png",
+  feedback: "assets/icons/icon-heart.png",
   calendar: "assets/icons/icon-calendar.png",
   cup: "assets/icons/icon-cup.png",
   heart: "assets/icons/icon-heart.png",
@@ -254,15 +255,18 @@ function BottomNav({ navigateTo }) {
       <img src="${ICONS.review}" alt="" aria-hidden="true" />
       回顾
     </button>
-    <button type="button" data-nav-music>
-      <img src="${ICONS.music}" alt="" aria-hidden="true" />
-      音乐
+    <button type="button" data-nav-feedback>
+      <img src="${ICONS.feedback}" alt="" aria-hidden="true" />
+      反馈
     </button>
   `;
 
   nav.querySelector("[data-nav-home]").addEventListener("click", () => navigateTo("/"));
   nav.querySelector("[data-nav-record]").addEventListener("click", () => navigateTo("/record"));
   nav.querySelector("[data-nav-review]").addEventListener("click", () => navigateTo("/dashboard"));
+  nav.querySelector("[data-nav-feedback]").addEventListener("click", () => {
+    window.location.href = "https://wpfeedback.netlify.app/";
+  });
   return nav;
 }
 
@@ -277,8 +281,10 @@ export function DashboardPage({ navigateTo }) {
       <button class="review-back-button" type="button" data-back-home aria-label="返回首页">
         <span aria-hidden="true">←</span>
       </button>
-      <h1>近7天回顾</h1>
-      <img class="review-top-icon" src="${ICONS.calendar}" alt="" aria-hidden="true" />
+      <h1>我一直都在这</h1>
+      <button class="review-calendar-button" type="button" data-calendar-entry aria-label="打开日历页">
+        <img class="review-top-icon" src="${ICONS.calendar}" alt="" aria-hidden="true" />
+      </button>
     </header>
 
     <div class="review-scroll" data-dashboard-grid>
@@ -292,6 +298,10 @@ export function DashboardPage({ navigateTo }) {
 
   page.querySelector("[data-back-home]").addEventListener("click", () => {
     navigateTo("/");
+  });
+
+  page.querySelector("[data-calendar-entry]").addEventListener("click", () => {
+    navigateTo("/calendar");
   });
 
   async function loadSummary() {

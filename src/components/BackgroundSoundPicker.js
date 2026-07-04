@@ -5,24 +5,35 @@ const SOUND_OPTIONS = [
     id: "wind",
     icon: "🍃",
     label: "风声",
+    src: "assets/sounds/wind.mp3",
     overlay: "rgba(128, 184, 156, 0.16)",
   },
   {
     id: "rain",
     icon: "🌧",
     label: "雨声",
+    src: "assets/sounds/rain.mp3",
     overlay: "rgba(95, 124, 154, 0.18)",
   },
   {
     id: "wave",
     icon: "🌊",
     label: "海浪声",
+    src: "assets/sounds/wave.mp3",
     overlay: "rgba(86, 145, 170, 0.16)",
+  },
+  {
+    id: "cicada",
+    icon: "🦗",
+    label: "蝉鸣声",
+    src: "assets/sounds/cicada.mp3",
+    overlay: "rgba(126, 159, 75, 0.16)",
   },
   {
     id: "fire",
     icon: "🔥",
-    label: "柴火声",
+    label: "冬日柴火声",
+    src: "assets/sounds/fire.mp3",
     overlay: "rgba(210, 112, 45, 0.18)",
   },
 ];
@@ -33,6 +44,19 @@ export function BackgroundSoundPicker({ onChange }) {
 
   let selectedSound = null;
   let isOpen = false;
+  const audio = new Audio();
+  audio.loop = true;
+  audio.volume = 0.45;
+
+  function playSound(sound) {
+    if (audio.src !== new URL(sound.src, window.location.href).href) {
+      audio.src = sound.src;
+    }
+
+    audio.play().catch(() => {
+      // 浏览器可能会因播放策略阻止音频；用户下一次点击时会再次尝试。
+    });
+  }
 
   function render() {
     container.innerHTML = `
@@ -94,11 +118,17 @@ export function BackgroundSoundPicker({ onChange }) {
           (sound) => sound.id === button.dataset.soundOption,
         );
         isOpen = false;
+        playSound(selectedSound);
         onChange(selectedSound);
         render();
       });
     });
   }
+
+  container.destroy = () => {
+    audio.pause();
+    audio.src = "";
+  };
 
   render();
   return container;

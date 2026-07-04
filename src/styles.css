@@ -1019,6 +1019,26 @@ input:focus-visible,
   filter: drop-shadow(0 5px 8px rgba(18, 7, 2, 0.4));
 }
 
+.review-calendar-button {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 246, 229, 0.16);
+  padding: 0;
+}
+
+.review-calendar-button:hover {
+  background: rgba(255, 246, 229, 0.28);
+  transform: translateY(-1px);
+}
+
+.review-calendar-button .review-top-icon {
+  pointer-events: none;
+}
+
 .review-scroll {
   display: grid;
   flex: 1 1 auto;
@@ -1290,6 +1310,114 @@ input:focus-visible,
   object-fit: contain;
 }
 
+.calendar-page {
+  background-position: center top;
+}
+
+.calendar-panel {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 14px;
+  min-height: 0;
+  overflow: auto;
+  padding: 2px 2px 92px;
+  scrollbar-width: none;
+}
+
+.calendar-panel::-webkit-scrollbar {
+  display: none;
+}
+
+.calendar-search-field {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 3px solid #7a3d20;
+  border-radius: 8px;
+  background: #ffe9bd;
+  box-shadow:
+    0 0 0 2px #fff5d6 inset,
+    0 5px 0 rgba(46, 20, 8, 0.46);
+  color: #3c2a20;
+  font-weight: 900;
+}
+
+.calendar-search-field input {
+  width: 100%;
+  min-height: 44px;
+  border: 2px solid rgba(122, 61, 32, 0.36);
+  border-radius: 8px;
+  background: #fff8e8;
+  color: #3c2a20;
+  font: inherit;
+  font-weight: 800;
+  padding: 0 12px;
+}
+
+.calendar-record-list {
+  display: grid;
+  gap: 12px;
+}
+
+.calendar-record-item {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 3px solid #7a3d20;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(255, 249, 235, 0.62) 25%, transparent 25%) 0 0 / 6px 6px,
+    linear-gradient(315deg, rgba(244, 211, 158, 0.18) 25%, transparent 25%) 0 0 / 6px 6px,
+    #ffeec8;
+  box-shadow:
+    0 0 0 2px #fff5d6 inset,
+    0 5px 0 rgba(46, 20, 8, 0.46);
+  color: #3c2a20;
+}
+
+.calendar-record-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #3b2a20;
+  font-size: 0.92rem;
+  font-weight: 900;
+}
+
+.calendar-record-meta span {
+  color: #9a4b42;
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+.calendar-record-item p {
+  margin: 0;
+  color: #4e382d;
+  font-weight: 600;
+  line-height: 1.55;
+}
+
+.calendar-record-item small {
+  color: #7b5a4a;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.calendar-empty {
+  margin: 0;
+  padding: 18px;
+  border: 3px solid #7a3d20;
+  border-radius: 8px;
+  background: #ffe9bd;
+  color: #4e382d;
+  font-weight: 900;
+  text-align: center;
+  box-shadow:
+    0 0 0 2px #fff5d6 inset,
+    0 5px 0 rgba(46, 20, 8, 0.46);
+}
+
 .ai-reply-layout {
   display: grid;
   gap: 24px;
@@ -1382,7 +1510,7 @@ input:focus-visible,
   gap: 10px;
   flex: 0 0 54px;
   min-height: 54px;
-  margin-bottom: clamp(126px, 21vh, 178px);
+  margin-bottom: clamp(68px, 14vh, 120px);
 }
 
 .ai-topbar h1 {
@@ -1416,11 +1544,12 @@ input:focus-visible,
 .ai-reply-layout {
   display: grid;
   flex: 1 1 auto;
-  grid-template-rows: minmax(0, 1fr) 172px 58px;
+  grid-template-rows: minmax(0, 1.25fr) 172px 58px;
   gap: 14px;
+  width: min(100%, 520px);
   max-width: none;
   min-height: 0;
-  margin: 0;
+  margin: 0 auto;
 }
 
 .ai-pixel-card {
@@ -1443,7 +1572,7 @@ input:focus-visible,
   gap: 14px;
   min-height: 0;
   margin-top: 0;
-  padding: 70px 30px 36px;
+  padding: 36px 34px 38px;
   overflow: hidden;
 }
 
@@ -1456,13 +1585,13 @@ input:focus-visible,
 }
 
 .ai-card-heart-start {
-  top: 24px;
-  left: 28px;
+  top: 18px;
+  left: 18px;
 }
 
 .ai-card-heart-end {
-  right: 28px;
-  bottom: 24px;
+  right: 18px;
+  bottom: 18px;
 }
 
 .loading-row {
@@ -1484,7 +1613,7 @@ input:focus-visible,
   min-height: 0;
   max-height: 100%;
   color: #39291f;
-  padding: 0 4px;
+  padding: 18px 22px;
   font-size: 0.94rem;
   font-weight: 500;
   line-height: 1.6;
@@ -1735,7 +1864,7 @@ input:focus-visible,
   .ai-message-card {
     margin-top: 0;
     min-height: 0;
-    padding: 70px 30px 36px;
+    padding: 36px 30px 38px;
   }
 
   .ai-reply-page {
@@ -1743,7 +1872,7 @@ input:focus-visible,
   }
 
   .ai-topbar {
-    margin-bottom: clamp(126px, 21vh, 178px);
+    margin-bottom: clamp(68px, 14vh, 120px);
   }
 
   .ai-message {
