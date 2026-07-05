@@ -252,12 +252,14 @@ export function AiReplyPage({ navigateTo }) {
     setLoading(true);
 
     try {
+      // 注入 user_id（后端必填，RecordPage 写入的 payload 里没有）
+      const payloadWithUser = { ...payload, user_id: window.USER_ID };
       const response = await fetch(AI_API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payloadWithUser),
         signal: abortController.signal,
       });
 
@@ -269,7 +271,7 @@ export function AiReplyPage({ navigateTo }) {
 
       if (contentType.includes("application/json")) {
         const data = await response.json();
-        saveRecord(payload, data);
+        saveRecord(payloadWithUser, data);
         careList.innerHTML = renderCareItems(splitCareTips(data.ai_self_care_tips));
         await appendWithTypewriter(formatMainReply(data));
         return;
