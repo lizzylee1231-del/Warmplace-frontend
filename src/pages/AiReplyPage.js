@@ -77,9 +77,13 @@ function splitCareTips(tips) {
 }
 
 function formatMainReply(data) {
+  // 优先用 ai_reply（后端实际返回的字段）
+  if (data.ai_reply) {
+    return data.ai_reply;
+  }
+  // 兜底：拼 summary + closing
   const summary = data.ai_summary ?? "这些感受值得被认真看见，也不需要立刻被整理得很完美。";
   const closing = data.ai_closing_message ?? "今晚先把自己放回暖窝里，慢慢呼吸一下，我们明天再一点点靠近它。";
-
   return [summary, closing].filter(Boolean).join("\n\n");
 }
 
