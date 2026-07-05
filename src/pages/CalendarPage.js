@@ -1,4 +1,6 @@
-const RECORDS_API_URL = "https://warmplace-production.up.railway.app/api/records";
+import { API_BASE_URL } from "../api-config.js";
+
+const RECORDS_API_URL = `${API_BASE_URL}/api/records`;
 
 function escapeHtml(value) {
   return String(value ?? "")

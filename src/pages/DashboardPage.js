@@ -1,4 +1,6 @@
-const SUMMARY_API_URL = "https://warmplace-production.up.railway.app/api/summary";
+import { API_BASE_URL } from "../api-config.js";
+
+const SUMMARY_API_URL = `${API_BASE_URL}/api/summary`;
 
 const ICONS = {
   home: "assets/icons/icon-home.png",

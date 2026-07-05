@@ -1,6 +1,8 @@
+import { API_BASE_URL } from "../api-config.js";
+
 const AI_REQUEST_KEY = "nuanwo_ai_reply_payload";
-const AI_API_URL = "https://warmplace-production.up.railway.app/api/ai/analyze";
-const SAVE_RECORD_API_URL = "https://warmplace-production.up.railway.app/api/records";
+const AI_API_URL = `${API_BASE_URL}/api/ai/analyze`;
+const SAVE_RECORD_API_URL = `${API_BASE_URL}/api/records`;
 
 const ICONS = {
   heart: "assets/icons/icon-heart.png",
