@@ -125,7 +125,7 @@ export function CalendarPage({ navigateTo }) {
     setElementVisible(loading, true, "block");
 
     try {
-      const url = new URL(RECORDS_API_URL);
+      const url = new URL(RECORDS_API_URL, window.location.origin);
       url.searchParams.set("range", "365d");
       url.searchParams.set("user_id", window.USER_ID ?? "");
 
