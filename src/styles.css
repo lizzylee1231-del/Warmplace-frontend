@@ -66,7 +66,7 @@ button {
   min-height: 100vh;
   margin: 0 auto;
   padding: 48px 22px 96px;
-  overflow: hidden;
+  overflow: visible;
   background-color: #3b2116;
   background-position: center;
   background-size: cover;
