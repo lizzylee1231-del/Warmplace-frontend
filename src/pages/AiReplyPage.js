@@ -1,8 +1,9 @@
-import { API_BASE_URL } from "../api-config.js";
+import { buildApiUrl } from "../api.js";
 
 const AI_REQUEST_KEY = "nuanwo_ai_reply_payload";
-const AI_API_URL = `${API_BASE_URL}/api/ai/analyze`;
-const SAVE_RECORD_API_URL = `${API_BASE_URL}/api/records`;
+
+const AI_API_URL = buildApiUrl("/api/ai/analyze");
+const SAVE_RECORD_API_URL = buildApiUrl("/api/records");
 
 const ICONS = {
   heart: "assets/icons/icon-heart.png",
@@ -18,6 +19,11 @@ const DEFAULT_CARE_ITEMS = [
   "可以听听喜欢的音乐，或慢慢散步",
 ];
 
+const RISK_MESSAGES = {
+  needs_attention: "这条记录里有一些需要多照看自己的信号。如果这种状态持续，找信任的人聊聊会更稳。",
+  crisis: "如果你此刻有伤害自己或他人的念头，请立刻联系身边可信任的人，或拨打当地紧急求助电话。",
+};
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -28,29 +34,31 @@ function escapeHtml(value) {
 }
 
 async function saveRecord(payload, aiData) {
-  try {
-    await fetch(SAVE_RECORD_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        user_id: window.USER_ID,
-        mood_text: payload.mood_text,
-        emotion_tags: payload.emotion_tags,
-        intensity: payload.intensity,
-        scene_category: payload.scene_category,
-        happy_moment: payload.happy_moment,
-        ai_observed_emotions: aiData.ai_observed_emotions ?? [],
-        ai_summary: aiData.ai_summary ?? "",
-        ai_self_care_tips: aiData.ai_self_care_tips ?? "",
-        ai_closing_message: aiData.ai_closing_message ?? "",
-        risk_level: aiData.risk_level ?? "normal",
-      }),
-    });
-  } catch (saveError) {
-    console.error("save record failed", saveError);
+  const response = await fetch(SAVE_RECORD_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      user_id: payload.user_id ?? window.USER_ID,
+      mood_text: payload.mood_text,
+      emotion_tags: payload.emotion_tags ?? [],
+      intensity: payload.intensity,
+      scene_category: payload.scene_category,
+      happy_moment: payload.happy_moment,
+      ai_observed_emotions: aiData.ai_observed_emotions ?? [],
+      ai_summary: aiData.ai_summary ?? "",
+      ai_self_care_tips: aiData.ai_self_care_tips ?? "",
+      ai_closing_message: aiData.ai_closing_message ?? "",
+      risk_level: aiData.risk_level ?? "normal",
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`保存失败：${response.status}`);
   }
+
+  return response.json();
 }
 
 function readStoredPayload() {
@@ -77,14 +85,43 @@ function splitCareTips(tips) {
 }
 
 function formatMainReply(data) {
-  // 优先用 ai_reply（后端实际返回的字段）
-  if (data.ai_reply) {
-    return data.ai_reply;
-  }
-  // 兜底：拼 summary + closing
-  const summary = data.ai_summary ?? "这些感受值得被认真看见，也不需要立刻被整理得很完美。";
+  const reply = data.ai_reply ?? "这些感受值得被认真看见，也不需要立刻被整理得很完美。";
+  const observed = data.ai_observed_emotions?.length
+    ? `我听见了这些感受：${data.ai_observed_emotions.join("、")}`
+    : "";
+  const summary = data.ai_summary ? `小结：${data.ai_summary}` : "";
   const closing = data.ai_closing_message ?? "今晚先把自己放回暖窝里，慢慢呼吸一下，我们明天再一点点靠近它。";
-  return [summary, closing].filter(Boolean).join("\n\n");
+
+  return [reply, observed, summary, closing].filter(Boolean).join("\n\n");
+}
+
+function getRiskInfo(riskLevel) {
+  if (!riskLevel || riskLevel === "normal") {
+    return null;
+  }
+
+  const isCrisis = riskLevel === "crisis";
+  const icon = isCrisis ? "🆘" : "⚠️";
+  const message = RISK_MESSAGES[riskLevel] ?? "";
+
+  if (!message) {
+    return null;
+  }
+
+  return { level: riskLevel, icon, message, isCrisis };
+}
+
+function renderRiskBanner(riskInfo) {
+  if (!riskInfo) {
+    return "";
+  }
+
+  return `
+    <div class="ai-risk-banner ${riskInfo.isCrisis ? "crisis" : ""}" role="alert">
+      <span class="ai-risk-banner-icon" aria-hidden="true">${riskInfo.icon}</span>
+      <span class="ai-risk-banner-text">${escapeHtml(riskInfo.message)}</span>
+    </div>
+  `;
 }
 
 function extractChunkText(chunk) {
@@ -152,6 +189,8 @@ export function AiReplyPage({ navigateTo }) {
           正在生成回应...
         </div>
 
+        <div class="ai-risk-area" data-risk-area hidden></div>
+
         <div class="ai-message" data-message></div>
 
         <div class="error-state" data-error hidden>
@@ -188,6 +227,7 @@ export function AiReplyPage({ navigateTo }) {
 
   const payload = readStoredPayload();
   const emptyState = page.querySelector("[data-empty-state]");
+  const riskArea = page.querySelector("[data-risk-area]");
   const messageCard = page.querySelector("[data-message-card]");
   const message = page.querySelector("[data-message]");
   const loading = page.querySelector("[data-loading]");
@@ -253,17 +293,17 @@ export function AiReplyPage({ navigateTo }) {
     fullText = "";
     updateMessage();
     setElementVisible(error, false);
+    riskArea.hidden = true;
+    riskArea.innerHTML = "";
     setLoading(true);
 
     try {
-      // 注入 user_id（后端必填，RecordPage 写入的 payload 里没有）
-      const payloadWithUser = { ...payload, user_id: window.USER_ID };
       const response = await fetch(AI_API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(payloadWithUser),
+        body: JSON.stringify(payload),
         signal: abortController.signal,
       });
 
@@ -275,9 +315,17 @@ export function AiReplyPage({ navigateTo }) {
 
       if (contentType.includes("application/json")) {
         const data = await response.json();
-        saveRecord(payloadWithUser, data);
         careList.innerHTML = renderCareItems(splitCareTips(data.ai_self_care_tips));
+
+        // 显示风险提示横幅（crisis / needs_attention 醒目展示）
+        const riskInfo = getRiskInfo(data.risk_level);
+        if (riskInfo) {
+          riskArea.innerHTML = renderRiskBanner(riskInfo);
+          riskArea.hidden = false;
+        }
+
         await appendWithTypewriter(formatMainReply(data));
+        await saveRecord(payload, data);
         return;
       }
 

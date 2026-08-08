@@ -208,7 +208,7 @@ h1 {
   max-width: 560px;
   margin: 14px 0 0;
   color: rgba(255, 241, 215, 0.86);
-  font-size: 1rem;
+  font-size: 0.88rem;
 }
 
 .eyebrow {
@@ -319,7 +319,7 @@ h1 {
 .home-tile h3 {
   margin: 0;
   color: var(--ink);
-  font-size: 1rem;
+  font-size: 0.88rem;
 }
 
 .home-tile p {
@@ -672,7 +672,7 @@ input:focus-visible,
 
 .record-section-heading h2 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.88rem;
   line-height: 1.25;
 }
 
@@ -736,9 +736,21 @@ input:focus-visible,
   border-radius: 999px;
   background: transparent;
   color: #935643;
-  font-size: 1rem;
+  font-size: 0.88rem;
   line-height: 1;
   box-shadow: none;
+}
+
+.record-choice-content {
+  min-width: 0;
+}
+
+.record-choice-icon {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  object-fit: contain;
+  image-rendering: auto;
 }
 
 .scene-grid .record-choice > span {
@@ -758,6 +770,87 @@ input:focus-visible,
 .intensity-option input:focus-visible + span {
   outline: 3px solid rgba(255, 226, 159, 0.82);
   outline-offset: 3px;
+}
+
+.custom-emotion-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.custom-emotion-field label,
+.custom-emotion-suggestions > span {
+  color: rgba(255, 230, 187, 0.88);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-shadow: 0 2px 8px rgba(13, 6, 3, 0.7);
+}
+
+.custom-emotion-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 74px;
+  gap: 8px;
+}
+
+.custom-emotion-control input {
+  min-width: 0;
+  min-height: 42px;
+  border: 2px solid #673314;
+  border-radius: 7px;
+  background: #fff3d0;
+  color: #3c241a;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  padding: 0 12px;
+}
+
+.custom-emotion-control input::placeholder {
+  color: rgba(88, 64, 51, 0.62);
+}
+
+.custom-emotion-control button,
+.custom-emotion-suggestions button,
+.custom-emotion-chip {
+  min-height: 38px;
+  border: 2px solid #673314;
+  border-radius: 7px;
+  background: #ffe9bd;
+  color: #4d3529;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.custom-emotion-control button:hover,
+.custom-emotion-suggestions button:hover,
+.custom-emotion-chip:hover {
+  background: #f3c982;
+}
+
+.custom-emotion-selected,
+.custom-emotion-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.custom-emotion-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 10px;
+}
+
+.custom-emotion-suggestions {
+  padding-top: 2px;
+}
+
+.custom-emotion-suggestions button {
+  min-height: 32px;
+  padding: 0 10px;
 }
 
 .intensity-picker {
@@ -952,7 +1045,7 @@ input:focus-visible,
 .moment-item h3 {
   margin: 0 0 8px;
   color: var(--ink);
-  font-size: 1rem;
+  font-size: 0.88rem;
 }
 
 .moment-item p,
@@ -1069,7 +1162,7 @@ input:focus-visible,
 .review-card h2 {
   margin: 0;
   color: #3b2a20;
-  font-size: 1rem;
+  font-size: 0.88rem;
   line-height: 1.25;
 }
 
@@ -1312,6 +1405,7 @@ input:focus-visible,
 
 .calendar-page {
   background-position: center top;
+  background-image: url("../assets/backgrounds/bg-calendar-room.webp");
 }
 
 .calendar-panel {
@@ -1383,6 +1477,31 @@ input:focus-visible,
   color: #3b2a20;
   font-size: 0.92rem;
   font-weight: 900;
+  flex-wrap: wrap;
+}
+
+.calendar-record-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.calendar-record-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.calendar-record-tags span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(154, 75, 66, 0.12);
+  color: #9a4b42;
+  font-size: 0.72rem;
+  font-weight: 700;
 }
 
 .calendar-record-meta span {
@@ -1459,9 +1578,9 @@ input:focus-visible,
 
 .ai-message {
   overflow: auto;
-  max-height: 52vh;
+  max-height: 45vh;
   color: var(--ink);
-  font-size: 1rem;
+  font-size: 0.88rem;
   line-height: 1.75;
 }
 
@@ -1510,7 +1629,7 @@ input:focus-visible,
   gap: 10px;
   flex: 0 0 54px;
   min-height: 54px;
-  margin-bottom: clamp(68px, 14vh, 120px);
+  margin-bottom: 14px;
 }
 
 .ai-topbar h1 {
@@ -1614,7 +1733,7 @@ input:focus-visible,
   max-height: 100%;
   color: #39291f;
   padding: 18px 22px;
-  font-size: 0.94rem;
+  font-size: 0.7rem;
   font-weight: 500;
   line-height: 1.6;
   letter-spacing: 0;
@@ -1676,7 +1795,7 @@ input:focus-visible,
   border-radius: 999px;
   background: transparent;
   color: #8b4a35;
-  font-size: 1rem;
+  font-size: 0.88rem;
   line-height: 1;
 }
 
@@ -1694,7 +1813,7 @@ input:focus-visible,
   justify-content: center;
   gap: 10px;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.88rem;
   font-weight: 900;
   line-height: 1;
 }
@@ -1734,7 +1853,7 @@ input:focus-visible,
 .error-state {
   gap: 12px;
   color: #8a2f20;
-  font-size: 1rem;
+  font-size: 0.88rem;
   font-weight: 800;
 }
 
@@ -1788,6 +1907,124 @@ input:focus-visible,
   background: rgba(200, 95, 95, 0.13);
 }
 
+/* 隐私与安全弹窗样式 */
+.privacy-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.privacy-modal:not([hidden]) {
+  opacity: 1;
+}
+
+.privacy-modal-overlay {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+}
+
+.privacy-modal-content {
+  position: relative;
+  width: min(90%, 480px);
+  max-height: 85vh;
+  margin: 20px;
+  border-radius: 12px;
+  background: var(--cream-strong);
+  box-shadow: 0 18px 42px rgba(35, 16, 8, 0.26);
+  overflow: auto;
+  transform: translateY(20px);
+  transition: transform 0.3s ease;
+}
+
+.privacy-modal:not([hidden]) .privacy-modal-content {
+  transform: translateY(0);
+}
+
+.privacy-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(97, 55, 35, 0.2);
+}
+
+.privacy-modal-header h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.privacy-modal-close {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(200, 95, 95, 0.14);
+  color: var(--rose-dark);
+  font-size: 1.2rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.privacy-modal-close:hover {
+  background: rgba(200, 95, 95, 0.22);
+  transform: scale(1.05);
+}
+
+.privacy-modal-body {
+  padding: 24px;
+  color: var(--ink);
+}
+
+.privacy-modal-body h3 {
+  margin: 20px 0 10px;
+  color: var(--rose-dark);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.privacy-modal-body p {
+  margin: 0 0 12px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.privacy-modal-body p:first-of-type {
+  font-weight: 700;
+}
+
+.privacy-agreement {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(97, 55, 35, 0.2);
+}
+
+.privacy-agreement label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.privacy-agreement input[type="checkbox"] {
+  margin-top: 2px;
+  cursor: pointer;
+}
+
 .sound-toggle {
   display: grid;
   width: 52px;
@@ -1799,6 +2036,236 @@ input:focus-visible,
   box-shadow: 0 14px 28px rgba(35, 16, 8, 0.26);
   font-size: 1.35rem;
   backdrop-filter: blur(12px);
+}
+
+.sound-toggle-glyph {
+  color: var(--rose-dark);
+  font-size: 1.85rem;
+  line-height: 1;
+}
+
+/* 昵称区域 */
+.nickname-area {
+  position: relative;
+  z-index: 2;
+  margin-top: 10px;
+  text-align: center;
+}
+
+.nickname-greeting {
+  margin: 0;
+  color: rgba(255, 241, 215, 0.92);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.nickname-greeting strong {
+  color: #ffd99e;
+}
+
+.nickname-edit-btn {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 10px;
+  border: 1px solid rgba(255, 217, 158, 0.4);
+  border-radius: 999px;
+  background: rgba(255, 217, 158, 0.12);
+  color: rgba(255, 241, 215, 0.8);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nickname-setup {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.nickname-input {
+  width: 160px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 217, 158, 0.35);
+  border-radius: 999px;
+  background: rgba(36, 19, 13, 0.35);
+  color: #fff4df;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.nickname-input::placeholder {
+  color: rgba(255, 230, 187, 0.5);
+}
+
+.nickname-input:focus {
+  outline: 2px solid rgba(255, 208, 139, 0.4);
+  outline-offset: 1px;
+}
+
+.nickname-set-btn {
+  min-height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: #c85f5f;
+  color: #fff8ef;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* AI 风险提示醒目展示 */
+.ai-risk-area {
+  margin-bottom: 4px;
+}
+
+.ai-risk-banner {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  align-items: start;
+  gap: 10px;
+  padding: 14px 18px;
+  border: 3px solid #c93838;
+  border-radius: 8px;
+  background: rgba(201, 56, 56, 0.12);
+  box-shadow: 0 0 0 2px rgba(255, 200, 200, 0.4) inset;
+}
+
+.ai-risk-banner.crisis {
+  border-color: #8b0000;
+  background: rgba(139, 0, 0, 0.18);
+  animation: risk-pulse 2s ease-in-out infinite;
+}
+
+.ai-risk-banner-icon {
+  font-size: 1.3rem;
+  line-height: 1.2;
+}
+
+.ai-risk-banner-text {
+  color: #8b0000;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.ai-risk-banner.crisis .ai-risk-banner-text {
+  color: #5c0000;
+  font-weight: 800;
+}
+
+@keyframes risk-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 2px rgba(255, 200, 200, 0.4) inset;
+  }
+  50% {
+    box-shadow: 0 0 0 2px rgba(255, 100, 100, 0.7) inset, 0 0 12px rgba(201, 56, 56, 0.3);
+  }
+}
+
+/* 删除记录按钮 */
+.calendar-record-delete {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 2px solid #9a4b42;
+  border-radius: 6px;
+  background: rgba(201, 89, 89, 0.1);
+  color: #9a4b42;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.calendar-record-delete:hover {
+  background: rgba(201, 89, 89, 0.22);
+  border-color: #8b0000;
+  color: #8b0000;
+}
+
+/* 周信卡片 */
+.weekly-letter-card {
+  padding: 18px 16px;
+}
+
+.weekly-letter-card h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  color: #3b2a20;
+  font-size: 0.88rem;
+}
+
+.weekly-letter-card .letter-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.weekly-letter-card .letter-content {
+  color: #4e382d;
+  font-size: 0.84rem;
+  line-height: 1.6;
+  font-weight: 500;
+  white-space: pre-wrap;
+}
+
+.weekly-letter-card .letter-loading {
+  color: #8a6a50;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 16px 0;
+  animation: pulse-fade 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-fade {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.weekly-letter-card .letter-signature {
+  margin-top: 10px;
+  text-align: right;
+  color: #9a4b42;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+/* 开心时刻标记按钮 */
+.happy-mark-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 2px solid #c9a040;
+  border-radius: 6px;
+  background: rgba(255, 224, 130, 0.2);
+  color: #8a6a20;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.happy-mark-btn:hover {
+  background: rgba(255, 224, 130, 0.4);
+}
+
+.happy-mark-btn.is-marked {
+  background: rgba(255, 200, 80, 0.3);
+  border-color: #b88820;
+  color: #6a4a10;
 }
 
 @keyframes page-enter {
@@ -1872,11 +2339,11 @@ input:focus-visible,
   }
 
   .ai-topbar {
-    margin-bottom: clamp(68px, 14vh, 120px);
+    margin-bottom: 14px;
   }
 
   .ai-message {
-    font-size: 0.94rem;
+    font-size: 0.7rem;
   }
 
   .ai-care-card {

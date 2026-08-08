@@ -1,5 +1,3 @@
-const MUSIC_ICON = "assets/icons/icon-music.png";
-
 const SOUND_OPTIONS = [
   {
     id: "wind",
@@ -97,7 +95,7 @@ export function BackgroundSoundPicker({ onChange }) {
         ${
           selectedSound
             ? `<span aria-hidden="true">${selectedSound.icon}</span>`
-            : `<img class="pixel-icon" src="${MUSIC_ICON}" alt="" aria-hidden="true" />`
+            : `<span class="sound-toggle-glyph" aria-hidden="true">♫</span>`
         }
       </button>
     `;

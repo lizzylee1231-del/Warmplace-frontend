@@ -4,6 +4,7 @@ import { RecordPage } from "./pages/RecordPage.js";
 import { DashboardPage } from "./pages/DashboardPage.js";
 import { AiReplyPage } from "./pages/AiReplyPage.js";
 import { CalendarPage } from "./pages/CalendarPage.js";
+import { BackgroundSoundPicker } from "./components/BackgroundSoundPicker.js";
 
 const USER_ID_STORAGE_KEY = "nuanwo_user_id";
 
@@ -28,6 +29,15 @@ function getOrCreateUserId() {
 }
 
 window.USER_ID = getOrCreateUserId();
+window.USER_NICKNAME = localStorage.getItem("nuanwo_nickname") ?? "";
+
+// 全局背景音乐——跨页面持续播放
+const soundPicker = BackgroundSoundPicker({
+  onChange(sound) {
+    document.documentElement.style.setProperty("--ambient-overlay", sound.overlay);
+  },
+});
+document.body.append(soundPicker);
 
 const app = document.querySelector("#app");
 

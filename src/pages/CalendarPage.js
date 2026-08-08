@@ -1,6 +1,7 @@
-import { API_BASE_URL } from "../api-config.js";
+import { buildApiUrl } from "../api.js";
 
-const RECORDS_API_URL = `${API_BASE_URL}/api/records`;
+const RECORDS_API_URL = buildApiUrl("/api/records");
+const MOMENTS_API_URL = buildApiUrl("/api/moments");
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -43,17 +44,27 @@ function RecordItem({ record }) {
   const text = record.mood_text ?? record.note ?? record.content ?? "这一天留下了一条记录。";
   const tags = record.emotion_tags ?? record.tags ?? [];
   const summary = record.ai_summary ?? record.summary ?? "";
+  const recordId = record.record_id ?? String(record.id ?? "");
+  const isHappy = Boolean(record.happy_moment);
 
   return `
-    <article class="calendar-record-item">
+    <article class="calendar-record-item" data-record-id="${escapeHtml(recordId)}">
       <div class="calendar-record-meta">
         <strong>${escapeHtml(date)}</strong>
-        ${
-          tags.length
-            ? `<span>${tags.map((tag) => escapeHtml(tag)).join(" / ")}</span>`
-            : ""
-        }
+        <div class="calendar-record-actions">
+          <button class="happy-mark-btn ${isHappy ? "is-marked" : ""}" type="button" data-happy-mark="${escapeHtml(recordId)}">
+            ${isHappy ? "🌟 已标记" : "☆ 标记开心"}
+          </button>
+          <button class="calendar-record-delete" type="button" data-delete-record="${escapeHtml(recordId)}">
+            🗑 删除
+          </button>
+        </div>
       </div>
+      ${
+        tags.length
+          ? `<div class="calendar-record-tags">${tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}</div>`
+          : ""
+      }
       <p>${escapeHtml(text)}</p>
       ${summary ? `<small>${escapeHtml(summary)}</small>` : ""}
     </article>
@@ -118,6 +129,88 @@ export function CalendarPage({ navigateTo }) {
     recordList.innerHTML = visibleRecords.length
       ? visibleRecords.map((record) => RecordItem({ record })).join("")
       : `<p class="calendar-empty">这一天暂时还没有记录。</p>`;
+
+    attachRecordActions();
+  }
+
+  function attachRecordActions() {
+    // 删除记录
+    recordList.querySelectorAll("[data-delete-record]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const recordId = button.dataset.deleteRecord;
+        if (!confirm("确定要删除这条记录吗？删除后无法恢复。")) {
+          return;
+        }
+
+        button.textContent = "删除中...";
+        button.disabled = true;
+
+        try {
+          const deleteUrl = buildApiUrl(`/api/records/${encodeURIComponent(recordId)}`);
+          const response = await fetch(deleteUrl, { method: "DELETE" });
+
+          if (!response.ok) {
+            throw new Error(`删除失败：${response.status}`);
+          }
+
+          // 从本地数据中移除并重新渲染
+          records = records.filter(
+            (record) => String(record.record_id ?? record.id) !== recordId,
+          );
+          renderRecords();
+        } catch (deleteError) {
+          button.textContent = "🗑 删除";
+          button.disabled = false;
+          alert("删除失败，请稍后重试。");
+          console.error("delete record error", deleteError);
+        }
+      });
+    });
+
+    // 补记开心时刻
+    recordList.querySelectorAll("[data-happy-mark]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const recordId = button.dataset.happyMark;
+        const article = button.closest("[data-record-id]");
+        const text = article?.querySelector("p")?.textContent ?? "";
+
+        button.disabled = true;
+        button.textContent = "标记中...";
+
+        try {
+          const response = await fetch(MOMENTS_API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              user_id: window.USER_ID,
+              record_id: recordId,
+              happy_moment: text,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`标记失败：${response.status}`);
+          }
+
+          // 更新本地数据
+          const record = records.find(
+            (record) => String(record.record_id ?? record.id) === recordId,
+          );
+          if (record) {
+            record.happy_moment = text;
+          }
+
+          button.classList.add("is-marked");
+          button.textContent = "🌟 已标记";
+          button.disabled = false;
+        } catch (markError) {
+          button.textContent = "☆ 标记开心";
+          button.disabled = false;
+          alert("标记失败，请稍后重试。");
+          console.error("mark happy moment error", markError);
+        }
+      });
+    });
   }
 
   async function loadRecords() {
@@ -126,7 +219,7 @@ export function CalendarPage({ navigateTo }) {
 
     try {
       const url = new URL(RECORDS_API_URL, window.location.origin);
-      url.searchParams.set("range", "365d");
+      url.searchParams.set("range", "all");
       url.searchParams.set("user_id", window.USER_ID ?? "");
 
       const response = await fetch(url.toString(), {

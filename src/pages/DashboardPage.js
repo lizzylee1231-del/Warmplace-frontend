@@ -1,11 +1,22 @@
-import { API_BASE_URL } from "../api-config.js";
+import { buildApiUrl } from "../api.js";
 
-const SUMMARY_API_URL = `${API_BASE_URL}/api/summary`;
+const SUMMARY_API_URL = buildApiUrl("/api/summary");
+const WEEKLY_LETTER_API_URL = buildApiUrl("/api/weekly-letter");
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
 
 const ICONS = {
   home: "assets/icons/icon-home.png",
   record: "assets/icons/icon-record.png",
   review: "assets/icons/icon-review.png",
+  reviewChart: "assets/icons/icon-review-chart.png",
   music: "assets/icons/icon-music.png",
   feedback: "assets/icons/icon-heart.png",
   calendar: "assets/icons/icon-calendar.png",
@@ -127,7 +138,7 @@ function SummaryCard({ summary }) {
     <section class="review-card growth-card" aria-labelledby="growth-title">
       <div>
         <h2 id="growth-title">成长小结</h2>
-        <p>${summary}</p>
+        <p>${escapeHtml(summary)}</p>
       </div>
       <div class="growth-illustration" aria-hidden="true">
         <span>✿</span>
@@ -254,7 +265,7 @@ function BottomNav({ navigateTo }) {
       记录
     </button>
     <button class="is-active" type="button" data-nav-review>
-      <img src="${ICONS.review}" alt="" aria-hidden="true" />
+      <img src="${ICONS.reviewChart}" alt="" aria-hidden="true" />
       回顾
     </button>
     <button type="button" data-nav-feedback>
@@ -332,7 +343,13 @@ export function DashboardPage({ navigateTo }) {
         ${HappyMomentCard({ moments: dashboardData.happyMoments })}
         ${TrendCard({ trend: dashboardData.trend })}
         ${ListsCard({ moods: dashboardData.moods, scenes: dashboardData.scenes })}
+        <section class="review-card weekly-letter-card" data-letter-card>
+          <h2><img class="letter-icon" src="${ICONS.heart}" alt="" aria-hidden="true" /> 朋友来信</h2>
+          <div class="letter-loading">朋友正在给你写信中...</div>
+        </section>
       `;
+
+      renderLetter();
     } catch (loadError) {
       if (!isActive || loadError.name === "AbortError") {
         return;
@@ -340,9 +357,89 @@ export function DashboardPage({ navigateTo }) {
 
       grid.innerHTML = `
         <section class="review-card review-loading-card">
-          加载回顾数据失败，请稍后重试。
+          <p>加载回顾数据失败，请稍后重试。</p>
+          <button class="ai-action-button ai-action-light" type="button" data-summary-retry>重试加载</button>
         </section>
       `;
+      grid.querySelector("[data-summary-retry]").addEventListener("click", loadSummary);
+    }
+  }
+
+  // ---- 周信（朋友来信）独立加载，不阻塞统计 ----
+  let letterData = null;
+  let letterLoaded = false;
+
+  async function loadWeeklyLetter() {
+    try {
+      const url = new URL(WEEKLY_LETTER_API_URL, window.location.origin);
+      url.searchParams.set("user_id", window.USER_ID ?? "");
+      url.searchParams.set("user_name", window.USER_NICKNAME ?? "");
+      url.searchParams.set("range", "7d");
+
+      const response = await fetch(url.toString(), {
+        signal: abortController.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`请求失败：${response.status}`);
+      }
+
+      letterData = await response.json();
+    } catch (letterError) {
+      if (letterError.name === "AbortError") {
+        return;
+      }
+      letterData = { error: true, message: letterError.message };
+    } finally {
+      letterLoaded = true;
+      renderLetter();
+    }
+  }
+
+  function renderLetter() {
+    const letterCard = page.querySelector("[data-letter-card]");
+    if (!letterCard || !isActive) {
+      return;
+    }
+
+    if (!letterLoaded) {
+      return; // 保持 loading 状态
+    }
+
+    if (letterData?.error) {
+      letterCard.innerHTML = `
+        <h2><img class="letter-icon" src="${ICONS.heart}" alt="" aria-hidden="true" /> 朋友来信</h2>
+        <p class="letter-content">来信暂时无法加载，稍后再看看吧。</p>
+        <button class="ai-action-button ai-action-light" type="button" data-letter-retry>重试加载</button>
+      `;
+      letterCard.querySelector("[data-letter-retry]").addEventListener("click", () => {
+        letterLoaded = false;
+        letterData = null;
+        renderLetter();
+        loadWeeklyLetter();
+      });
+      return;
+    }
+
+    const letter = letterData?.letter ?? "";
+    const recordCount = letterData?.record_count ?? 0;
+
+    if (recordCount === 0) {
+      letterCard.innerHTML = `
+        <h2><img class="letter-icon" src="${ICONS.heart}" alt="" aria-hidden="true" /> 朋友来信</h2>
+        <p class="letter-content">这周还没有记录，朋友暂时没有素材写信。等你记下一些心情，下周就能收到回信了。</p>
+      `;
+      return;
+    }
+
+    letterCard.innerHTML = `
+      <h2><img class="letter-icon" src="${ICONS.heart}" alt="" aria-hidden="true" /> 朋友来信</h2>
+      <div class="letter-content"></div>
+    `;
+    // 使用 textContent 安全渲染信件内容（不使用 innerHTML）
+    const contentEl = letterCard.querySelector(".letter-content");
+    if (contentEl) {
+      contentEl.textContent = letter;
     }
   }
 
@@ -351,7 +448,9 @@ export function DashboardPage({ navigateTo }) {
     abortController.abort();
   };
 
+  // 统计和来信并行请求，互不阻塞
   loadSummary();
+  loadWeeklyLetter();
 
   return page;
 }
