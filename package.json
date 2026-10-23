@@ -4,7 +4,17 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "node scripts/build.mjs",
+    "predev": "npm run build",
+    "test": "node --test tests/*.test.js",
     "dev": "node server.js",
     "check": "node --check src/api.js && node --check src/main.js && node --check src/router.js && node --check src/pages/HomePage.js && node --check src/pages/RecordPage.js && node --check src/pages/DashboardPage.js && node --check src/pages/AiReplyPage.js && node --check src/pages/CalendarPage.js && node --check src/components/BackgroundSoundPicker.js && node --check server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.118.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "jsdom": "26.1.0"
   }
 }

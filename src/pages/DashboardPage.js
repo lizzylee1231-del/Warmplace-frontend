@@ -1,4 +1,4 @@
-import { buildApiUrl } from "../api.js";
+import { apiFetch, buildApiUrl } from "../api.js";
 
 const SUMMARY_API_URL = buildApiUrl("/api/summary");
 const WEEKLY_LETTER_API_URL = buildApiUrl("/api/weekly-letter");
@@ -75,16 +75,8 @@ function scoreToY(score) {
 }
 
 function buildTrendSvg(trend) {
-  const fallback = [
-    { date: "5/12", score: 3 },
-    { date: "5/13", score: 5 },
-    { date: "5/14", score: 4 },
-    { date: "5/15", score: 4 },
-    { date: "5/16", score: 2 },
-    { date: "5/17", score: 3 },
-    { date: "5/18", score: 4 },
-  ];
-  const points = (trend.length ? trend : fallback).slice(-7);
+  if (!trend.length) return '<p class="empty-state">还没有心情记录，写下第一条后再来看看吧。</p>';
+  const points = trend.slice(-7);
   const width = 286;
   const height = 128;
   const chartLeft = 42;
@@ -177,24 +169,14 @@ function TrendCard({ trend }) {
 }
 
 function ListsCard({ moods, scenes }) {
-  const moodItems = topItems(moods, [
-    { label: "焦虑", count: 4 },
-    { label: "疲惫", count: 3 },
-    { label: "难过", count: 2 },
-    { label: "压力大", count: 2 },
-    { label: "平静", count: 2 },
-  ], MOOD_ICON_MAP, MOOD_ALIASES);
-  const sceneItems = topItems(scenes, [
-    { label: "工作/学习", count: 5 },
-    { label: "人际关系", count: 3 },
-    { label: "亲密关系", count: 2 },
-    { label: "独处", count: 2 },
-  ], SCENE_ICON_MAP, SCENE_ALIASES);
+  const moodItems = topItems(moods, [], MOOD_ICON_MAP, MOOD_ALIASES);
+  const sceneItems = topItems(scenes, [], SCENE_ICON_MAP, SCENE_ALIASES);
 
   return `
     <section class="review-lists">
       <article class="review-card list-card">
         <h2>最近常有的心情 <span>出现次数</span></h2>
+        ${moodItems.length ? "" : '<p class="empty-state">还没有可统计的心情。</p>'}
         <ul>
           ${moodItems
             .map(
@@ -210,6 +192,7 @@ function ListsCard({ moods, scenes }) {
       </article>
       <article class="review-card list-card">
         <h2>多半是因为这些事 <span>出现次数</span></h2>
+        ${sceneItems.length ? "" : '<p class="empty-state">还没有可统计的场景。</p>'}
         <ul>
           ${sceneItems
             .map(
@@ -283,7 +266,7 @@ function BottomNav({ navigateTo }) {
   return nav;
 }
 
-export function DashboardPage({ navigateTo }) {
+export function DashboardPage({ navigateTo, request = apiFetch }) {
   const page = document.createElement("main");
   page.className = "page dashboard-page review-page";
   const abortController = new AbortController();
@@ -321,8 +304,8 @@ export function DashboardPage({ navigateTo }) {
     const grid = page.querySelector("[data-dashboard-grid]");
 
     try {
-      const response = await fetch(
-        `${SUMMARY_API_URL}?range=7d&user_id=${encodeURIComponent(window.USER_ID ?? "")}`,
+      const response = await request(
+        `${SUMMARY_API_URL}?range=7d`,
         { signal: abortController.signal },
       );
 
@@ -372,11 +355,10 @@ export function DashboardPage({ navigateTo }) {
   async function loadWeeklyLetter() {
     try {
       const url = new URL(WEEKLY_LETTER_API_URL, window.location.origin);
-      url.searchParams.set("user_id", window.USER_ID ?? "");
       url.searchParams.set("user_name", window.USER_NICKNAME ?? "");
       url.searchParams.set("range", "7d");
 
-      const response = await fetch(url.toString(), {
+      const response = await request(url.toString(), {
         signal: abortController.signal,
       });
 
@@ -434,6 +416,7 @@ export function DashboardPage({ navigateTo }) {
 
     letterCard.innerHTML = `
       <h2><img class="letter-icon" src="${ICONS.heart}" alt="" aria-hidden="true" /> 朋友来信</h2>
+      ${letterData?.generation_status === "fallback" ? '<p role="status">来信暂时未能生成，下面是通用提示，请稍后再试。</p>' : ""}
       <div class="letter-content"></div>
     `;
     // 使用 textContent 安全渲染信件内容（不使用 innerHTML）

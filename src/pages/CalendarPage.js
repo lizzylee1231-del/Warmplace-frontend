@@ -1,4 +1,4 @@
-import { buildApiUrl } from "../api.js";
+import { apiFetch, buildApiUrl } from "../api.js";
 
 const RECORDS_API_URL = buildApiUrl("/api/records");
 const MOMENTS_API_URL = buildApiUrl("/api/moments");
@@ -147,7 +147,7 @@ export function CalendarPage({ navigateTo }) {
 
         try {
           const deleteUrl = buildApiUrl(`/api/records/${encodeURIComponent(recordId)}`);
-          const response = await fetch(deleteUrl, { method: "DELETE" });
+          const response = await apiFetch(deleteUrl, { method: "DELETE" });
 
           if (!response.ok) {
             throw new Error(`删除失败：${response.status}`);
@@ -178,11 +178,10 @@ export function CalendarPage({ navigateTo }) {
         button.textContent = "标记中...";
 
         try {
-          const response = await fetch(MOMENTS_API_URL, {
+          const response = await apiFetch(MOMENTS_API_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              user_id: window.USER_ID,
               record_id: recordId,
               happy_moment: text,
             }),
@@ -220,9 +219,8 @@ export function CalendarPage({ navigateTo }) {
     try {
       const url = new URL(RECORDS_API_URL, window.location.origin);
       url.searchParams.set("range", "all");
-      url.searchParams.set("user_id", window.USER_ID ?? "");
 
-      const response = await fetch(url.toString(), {
+      const response = await apiFetch(url.toString(), {
         signal: abortController.signal,
       });
 
