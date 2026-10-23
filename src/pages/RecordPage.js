@@ -35,7 +35,7 @@ function renderIntensityOption(value, defaultIntensity) {
   return `<label class="intensity-option"><input type="radio" name="intensity" value="${value}" ${value === defaultIntensity ? "checked" : ""} /><span><img src="${LAMP_ICON}" alt="" aria-hidden="true" /><strong>${value}</strong></span></label>`;
 }
 
-export function RecordPage({ query }) {
+export function RecordPage({ query, navigateTo }) {
   const page = document.createElement("main");
   page.className = "page record-page";
   const isHappyMood = query?.get("mood") === "happy";
@@ -87,7 +87,7 @@ export function RecordPage({ query }) {
     const emotionTags = uniqueTags([...formData.getAll("tags"), ...customEmotionTags, customEmotionInput.value]);
     const sceneTags = formData.getAll("scenes");
     const note = String(formData.get("note") ?? "").trim();
-    const payload = { user_id: window.USER_ID, mood_text: note, emotion_tags: emotionTags, intensity: Number(formData.get("intensity") ?? defaultIntensity), scene_category: sceneTags.length ? sceneTags.join("、") : "日常记录", happy_moment: emotionTags.includes("开心") ? note : null };
+    const payload = { client_request_id: window.crypto.randomUUID(), mood_text: note, emotion_tags: emotionTags, intensity: Number(formData.get("intensity") ?? defaultIntensity), scene_category: sceneTags.length ? sceneTags.join("、") : "日常记录", happy_moment: emotionTags.includes("开心") ? note : null };
     sessionStorage.setItem(AI_REQUEST_KEY, JSON.stringify(payload));
     navigateTo("/ai-reply");
   });

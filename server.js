@@ -4,7 +4,7 @@ import { extname, isAbsolute, relative, resolve } from "node:path";
 
 const host = "127.0.0.1";
 const port = 4173;
-const root = resolve(".");
+const root = resolve("dist");
 const backendOrigin = process.env.WARMNEST_BACKEND_ORIGIN ?? "https://warmplace-one.vercel.app";
 
 const contentTypes = {
@@ -41,12 +41,14 @@ async function proxyApiRequest(request, response, pathname) {
     headers: {
       accept: request.headers.accept ?? "application/json",
       "content-type": request.headers["content-type"] ?? "application/json",
+      ...(request.headers.authorization ? { authorization: request.headers.authorization } : {}),
     },
     body: requestBody,
   });
   const responseBody = Buffer.from(await upstreamResponse.arrayBuffer());
   response.writeHead(upstreamResponse.status, {
     "Content-Type": upstreamResponse.headers.get("content-type") ?? "application/json; charset=utf-8",
+    "Cache-Control": "no-store",
   });
   response.end(responseBody);
 }

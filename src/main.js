@@ -6,29 +6,8 @@ import { AiReplyPage } from "./pages/AiReplyPage.js";
 import { CalendarPage } from "./pages/CalendarPage.js";
 import { BackgroundSoundPicker } from "./components/BackgroundSoundPicker.js";
 
-const USER_ID_STORAGE_KEY = "nuanwo_user_id";
-
-function createUserId() {
-  if (window.crypto?.randomUUID) {
-    return `user_${window.crypto.randomUUID()}`;
-  }
-
-  return `user_${Math.random().toString(36).slice(2, 11)}_${Date.now()}`;
-}
-
-function getOrCreateUserId() {
-  const savedUserId = localStorage.getItem(USER_ID_STORAGE_KEY);
-
-  if (savedUserId) {
-    return savedUserId;
-  }
-
-  const userId = createUserId();
-  localStorage.setItem(USER_ID_STORAGE_KEY, userId);
-  return userId;
-}
-
-window.USER_ID = getOrCreateUserId();
+// Keep the old device identifier untouched for an operator-assisted migration.
+// It is never used as proof of identity or sent to the API.
 window.USER_NICKNAME = localStorage.getItem("nuanwo_nickname") ?? "";
 
 // 全局背景音乐——跨页面持续播放
