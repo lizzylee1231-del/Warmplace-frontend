@@ -1,4 +1,5 @@
-import { navigateTo } from "../router.js";
+import { apiFetch } from "../api.js";
+import { saveNote } from "../records.js";
 
 const EMOTION_TAGS = [
   { label: "焦虑", icon: "assets/icons/icon-emotion-anxiety.png" },
@@ -35,7 +36,7 @@ function renderIntensityOption(value, defaultIntensity) {
   return `<label class="intensity-option"><input type="radio" name="intensity" value="${value}" ${value === defaultIntensity ? "checked" : ""} /><span><img src="${LAMP_ICON}" alt="" aria-hidden="true" /><strong>${value}</strong></span></label>`;
 }
 
-export function RecordPage({ query, navigateTo }) {
+export function RecordPage({ query, navigateTo, request = apiFetch }) {
   const page = document.createElement("main");
   page.className = "page record-page";
   const isHappyMood = query?.get("mood") === "happy";
@@ -49,6 +50,7 @@ export function RecordPage({ query, navigateTo }) {
       <section class="record-section" aria-labelledby="emotion-title"><div class="record-section-heading"><h2 id="emotion-title">现在感觉怎么样？</h2></div><div class="record-choice-grid emotion-grid">${EMOTION_TAGS.map((tag) => renderChoice(tag, "tags", selectedTags)).join("")}</div><div class="custom-emotion-field"><label for="custom-emotion-input">自定义标签</label><div class="custom-emotion-control"><input id="custom-emotion-input" type="text" maxlength="18" placeholder="例如：被治愈" data-custom-emotion-input /><button type="button" data-add-custom-emotion>添加</button></div><div class="custom-emotion-selected" data-custom-emotion-selected></div></div></section>
       <section class="record-section" aria-labelledby="intensity-title"><div class="record-section-heading compact"><h2 id="intensity-title">情绪强度</h2><p>此刻感受有多强烈？</p></div><div class="intensity-picker" role="radiogroup" aria-labelledby="intensity-title">${[1, 2, 3, 4, 5].map((value) => renderIntensityOption(value, defaultIntensity)).join("")}</div></section>
       <section class="record-section" aria-labelledby="scene-title"><div class="record-section-heading"><h2 id="scene-title">发生的场景</h2><p>可多选</p></div><div class="record-choice-grid scene-grid">${SCENE_TAGS.map((tag) => renderChoice(tag, "scenes")).join("")}</div></section>
+      <p class="error-state" role="alert" data-save-error hidden></p>
       <button class="record-submit" type="submit"><span aria-hidden="true">✦</span>让它陪我待一会儿<span aria-hidden="true">✦</span></button>
     </form>
   `;
@@ -60,6 +62,12 @@ export function RecordPage({ query, navigateTo }) {
   const addCustomEmotionButton = page.querySelector("[data-add-custom-emotion]");
   const customEmotionSelected = page.querySelector("[data-custom-emotion-selected]");
   let customEmotionTags = [];
+  let isSaving = false;
+  let isActive = true;
+  let pendingPayload = null;
+  const submitButton = page.querySelector("[type=submit]");
+  const submitContent = submitButton.innerHTML;
+  const saveError = page.querySelector("[data-save-error]");
 
   page.querySelector("[data-back-home]").addEventListener("click", () => navigateTo("/"));
   noteInput.addEventListener("input", () => { noteCount.textContent = String(noteInput.value.length); });
@@ -81,15 +89,39 @@ export function RecordPage({ query, navigateTo }) {
 
   addCustomEmotionButton.addEventListener("click", () => addCustomEmotionTag());
   customEmotionInput.addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); addCustomEmotionTag(); } });
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (isSaving) return;
     const formData = new FormData(form);
     const emotionTags = uniqueTags([...formData.getAll("tags"), ...customEmotionTags, customEmotionInput.value]);
     const sceneTags = formData.getAll("scenes");
     const note = String(formData.get("note") ?? "").trim();
-    const payload = { client_request_id: window.crypto.randomUUID(), mood_text: note, emotion_tags: emotionTags, intensity: Number(formData.get("intensity") ?? defaultIntensity), scene_category: sceneTags.length ? sceneTags.join("、") : "日常记录", happy_moment: emotionTags.includes("开心") ? note : null };
-    sessionStorage.setItem(AI_REQUEST_KEY, JSON.stringify(payload));
-    navigateTo("/ai-reply");
+    if (!note) return;
+    const fields = { mood_text: note, emotion_tags: emotionTags, intensity: Number(formData.get("intensity") ?? defaultIntensity), scene_category: sceneTags.length ? sceneTags.join("、") : "日常记录", happy_moment: emotionTags.includes("开心") ? note : null };
+    const previousFields = pendingPayload && { ...pendingPayload, client_request_id: undefined };
+    if (JSON.stringify(fields) !== JSON.stringify(previousFields)) {
+      pendingPayload = { ...fields, client_request_id: window.crypto.randomUUID() };
+    }
+    isSaving = true;
+    submitButton.disabled = true;
+    submitButton.textContent = "正在保存记录...";
+    saveError.hidden = true;
+    try {
+      const recordId = await saveNote(pendingPayload, request);
+      const payload = { ...pendingPayload, record_id: recordId };
+      sessionStorage.setItem(AI_REQUEST_KEY, JSON.stringify(payload));
+      if (isActive) navigateTo("/ai-reply");
+    } catch {
+      if (isActive) {
+        saveError.textContent = "记录未保存，请重试。你写下的内容还在这里。";
+        saveError.hidden = false;
+      }
+    } finally {
+      isSaving = false;
+      submitButton.disabled = false;
+      submitButton.innerHTML = submitContent;
+    }
   });
+  page.destroy = () => { isActive = false; };
   return page;
 }

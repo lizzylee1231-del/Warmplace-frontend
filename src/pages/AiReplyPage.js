@@ -1,9 +1,8 @@
 import { apiFetch, buildApiUrl } from "../api.js";
+import { saveNote } from "../records.js";
 
 const AI_REQUEST_KEY = "nuanwo_ai_reply_payload";
 
-const AI_API_URL = buildApiUrl("/api/ai/analyze");
-const SAVE_RECORD_API_URL = buildApiUrl("/api/records");
 
 const ICONS = {
   heart: "assets/icons/icon-heart.png",
@@ -31,34 +30,6 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
-}
-
-async function saveRecord(payload, aiData, request) {
-  const response = await request(SAVE_RECORD_API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      client_request_id: payload.client_request_id,
-      mood_text: payload.mood_text,
-      emotion_tags: payload.emotion_tags ?? [],
-      intensity: payload.intensity,
-      scene_category: payload.scene_category,
-      happy_moment: payload.happy_moment,
-      ai_observed_emotions: aiData.ai_observed_emotions ?? [],
-      ai_summary: aiData.ai_summary ?? "",
-      ai_self_care_tips: aiData.ai_self_care_tips ?? "",
-      ai_closing_message: aiData.ai_closing_message ?? "",
-      risk_level: aiData.risk_level ?? "unknown",
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`保存失败：${response.status}`);
-  }
-
-  return response.json();
 }
 
 function readStoredPayload() {
@@ -124,30 +95,6 @@ function renderRiskBanner(riskInfo) {
   `;
 }
 
-function extractChunkText(chunk) {
-  const events = chunk
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.startsWith("data:"))
-    .map((line) => line.replace(/^data:\s*/, ""))
-    .filter((line) => line && line !== "[DONE]");
-
-  if (!events.length) {
-    return chunk;
-  }
-
-  return events
-    .map((event) => {
-      try {
-        const data = JSON.parse(event);
-        return data.content ?? data.text ?? data.delta ?? "";
-      } catch {
-        return event;
-      }
-    })
-    .join("");
-}
-
 function renderCareItems(items) {
   return items
     .map(
@@ -165,7 +112,7 @@ export function AiReplyPage({ navigateTo, request = apiFetch }) {
   const page = document.createElement("main");
   page.className = "page ai-reply-page";
   const abortController = new AbortController();
-  const typewriterTimers = new Set();
+  const typewriterTimers = new Map();
   let isActive = true;
 
   page.innerHTML = `
@@ -241,8 +188,7 @@ export function AiReplyPage({ navigateTo, request = apiFetch }) {
   const careList = page.querySelector("[data-care-list]");
 
   let fullText = "";
-  let generatedData = null;
-  let saved = false;
+  let completed = false;
   let inFlight = false;
 
   function setElementVisible(element, isVisible, visibleDisplay = "") {
@@ -276,7 +222,7 @@ export function AiReplyPage({ navigateTo, request = apiFetch }) {
           typewriterTimers.delete(timer);
           resolve();
         }, 6);
-        typewriterTimers.add(timer);
+        typewriterTimers.set(timer, resolve);
       });
     }
   }
@@ -297,23 +243,9 @@ export function AiReplyPage({ navigateTo, request = apiFetch }) {
       return;
     }
 
-    if (inFlight || saved) return;
+    if (inFlight || completed) return;
     inFlight = true;
     retryButton.disabled = true;
-
-    if (generatedData) {
-      try {
-        await saveRecord(payload, generatedData, request);
-        saved = true;
-        setElementVisible(error, false);
-      } catch {
-        showError("回应已生成，但记录尚未保存。请重试保存。");
-      } finally {
-        inFlight = false;
-        retryButton.disabled = false;
-      }
-      return;
-    }
 
     fullText = "";
     updateMessage();
@@ -323,12 +255,14 @@ export function AiReplyPage({ navigateTo, request = apiFetch }) {
     setLoading(true);
 
     try {
-      const response = await request(AI_API_URL, {
+      // Support a reply tab opened before this release: save its note first, too.
+      if (!payload.record_id) {
+        payload.record_id = await saveNote(payload, request);
+        sessionStorage.setItem(AI_REQUEST_KEY, JSON.stringify(payload));
+      }
+      if (!isActive) return;
+      const response = await request(buildApiUrl(`/api/records/${encodeURIComponent(payload.record_id)}/analyze`), {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ ...payload, user_id: undefined }),
         signal: abortController.signal,
       });
 
@@ -336,57 +270,28 @@ export function AiReplyPage({ navigateTo, request = apiFetch }) {
         throw new Error(`请求失败：${response.status}`);
       }
 
-      const contentType = response.headers.get("content-type") ?? "";
-
-      if (contentType.includes("application/json")) {
-        const data = await response.json();
-        generatedData = data;
-        careList.innerHTML = renderCareItems(splitCareTips(data.ai_self_care_tips));
-
-        // 显示风险提示横幅（crisis / needs_attention 醒目展示）
-        const riskInfo = getRiskInfo(data.risk_level);
-        if (riskInfo) {
-          riskArea.innerHTML = renderRiskBanner(riskInfo);
-          riskArea.hidden = false;
-        }
-
-        await appendWithTypewriter(formatMainReply(data));
-        if (data.generation_status === "fallback") {
-          fullText = "AI 暂时未完成分析，以下为通用陪伴提示。\n\n" + fullText;
-          updateMessage();
-        }
-        try {
-          await saveRecord(payload, data, request);
-          saved = true;
-        } catch {
-          retryButton.textContent = "重试保存";
-          throw new Error("回应已生成，但记录尚未保存。请重试保存。");
-        }
-        return;
+      const data = await response.json();
+      if (!isActive) return;
+      if (data.generation_status !== "generated") {
+        throw new Error("AI generation failed");
       }
-
-      if (!response.body) {
-        throw new Error("后端没有返回可读取的内容");
+      // This endpoint only succeeds after writing the reply to this saved record.
+      completed = true;
+      careList.innerHTML = renderCareItems(splitCareTips(data.ai_self_care_tips));
+      const riskInfo = getRiskInfo(data.risk_level);
+      if (riskInfo) {
+        riskArea.innerHTML = renderRiskBanner(riskInfo);
+        riskArea.hidden = false;
       }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder("utf-8");
-
-      while (true) {
-        const { value, done } = await reader.read();
-
-        if (done) {
-          break;
-        }
-
-        await appendWithTypewriter(extractChunkText(decoder.decode(value, { stream: true })));
-      }
+      setLoading(false);
+      await appendWithTypewriter(formatMainReply(data));
     } catch (requestError) {
       if (!isActive || requestError.name === "AbortError") {
         return;
       }
 
-      showError(requestError.message || "网络请求失败，请稍后重试。");
+      retryButton.textContent = payload.record_id ? "重试生成" : "重试保存";
+      showError(payload.record_id ? "回复没生成出来，记录已保存" : "记录未保存，请重试保存。");
     } finally {
       setLoading(false);
       inFlight = false;
@@ -413,7 +318,7 @@ export function AiReplyPage({ navigateTo, request = apiFetch }) {
   page.destroy = () => {
     isActive = false;
     abortController.abort();
-    typewriterTimers.forEach((timer) => window.clearTimeout(timer));
+    typewriterTimers.forEach((resolve, timer) => { window.clearTimeout(timer); resolve(); });
     typewriterTimers.clear();
   };
 

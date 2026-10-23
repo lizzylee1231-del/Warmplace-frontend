@@ -37,28 +37,107 @@ test("record page uses router callback when going back", () => {
   assert.equal(target, "/");
 });
 
-test("retrying a failed save reuses the generated reply", async () => {
+test("record submit waits for durable save before opening the reply page", async () => {
+  setup();
+  let resolveSave, target;
+  const calls = [];
+  const page = RecordPage({ query: new URLSearchParams(), navigateTo(value) { target = value; },
+    request(url, options) { calls.push({ url, body: JSON.parse(options.body) }); return new Promise(resolve => { resolveSave = resolve; }); } });
+  page.querySelector("[data-note]").value = "今天想记下来";
+  page.querySelector("form").dispatchEvent(new window.Event("submit", { cancelable: true }));
+  page.querySelector("form").dispatchEvent(new window.Event("submit", { cancelable: true }));
+  assert.equal(target, undefined);
+  assert.equal(calls.length, 1);
+  assert.match(String(calls[0].url), /\/api\/records$/);
+  assert.equal(calls[0].body.mood_text, "今天想记下来");
+  resolveSave(new Response('{"record_id":"42"}'));
+  await tick();
+  assert.equal(target, "/ai-reply");
+  assert.equal(JSON.parse(sessionStorage.getItem("nuanwo_ai_reply_payload")).record_id, "42");
+});
+
+test("failed initial save keeps note and retries with the same request id", async () => {
+  setup();
+  let target;
+  const keys = [];
+  const page = RecordPage({ navigateTo(value) { target = value; }, request: async (_url, options) => {
+    keys.push(JSON.parse(options.body).client_request_id);
+    return keys.length === 1 ? new Response("{}", { status: 503 }) : new Response('{"record_id":"42"}');
+  } });
+  page.querySelector("[data-note]").value = "不能丢的原文";
+  const submit = () => page.querySelector("form").dispatchEvent(new window.Event("submit", { cancelable: true }));
+  submit();
+  await tick();
+  assert.equal(target, undefined);
+  assert.equal(page.querySelector("[data-note]").value, "不能丢的原文");
+  assert.match(page.querySelector("[data-save-error]").textContent, /未保存/);
+  submit();
+  await tick();
+  assert.equal(keys[0], keys[1]);
+  assert.equal(target, "/ai-reply");
+});
+
+function storedNote() {
+  sessionStorage.setItem("nuanwo_ai_reply_payload", JSON.stringify({ record_id: "42", mood_text: "test", intensity: 3, scene_category: "test" }));
+}
+
+test("leaving during generation never depends on a later record insert", async () => {
+  setup(); storedNote();
+  const calls = [];
+  const page = AiReplyPage({ navigateTo() {}, request(url, options) {
+    calls.push(String(url));
+    return new Promise((_resolve, reject) => options.signal.addEventListener("abort", () => reject(new DOMException("left", "AbortError"))));
+  } });
+  assert.match(calls[0], /\/api\/records\/42\/analyze$/);
+  page.destroy();
+  await tick();
+  assert.equal(calls.length, 1);
+  assert.equal(JSON.parse(sessionStorage.getItem("nuanwo_ai_reply_payload")).record_id, "42");
+});
+
+test("AI failure confirms saved note and retry uses the same record", async () => {
+  for (const fallback of [false, true]) {
+    setup(); storedNote();
+    const calls = [];
+    const page = AiReplyPage({ navigateTo() {}, request: async url => {
+      calls.push(String(url));
+      return fallback ? Response.json({ generation_status: "fallback" }) : new Response("{}", { status: 503 });
+    } });
+    await tick();
+    assert.equal(page.querySelector("[data-error-text]").textContent, "回复没生成出来，记录已保存");
+    page.querySelector("[data-retry]").click();
+    await tick();
+    assert.equal(calls.length, 2);
+    assert.equal(calls[0], calls[1]);
+    assert.match(calls[0], /\/api\/records\/42\/analyze$/);
+    page.destroy();
+  }
+});
+
+test("saved AI response is independent of the typewriter animation", async () => {
+  setup(); storedNote();
+  const calls = [];
+  const page = AiReplyPage({ navigateTo() {}, request: async url => {
+    calls.push(String(url));
+    return Response.json({ record_id: "42", ai_reply: "这是一段还没有播完就离开的长回复", generation_status: "generated" });
+  } });
+  await tick();
+  page.destroy();
+  await tick();
+  assert.equal(calls.length, 1);
+  assert.match(calls[0], /\/api\/records\/42\/analyze$/);
+});
+
+test("legacy reply-page payload is saved before analysis starts", async () => {
   setup();
   sessionStorage.setItem("nuanwo_ai_reply_payload", JSON.stringify({ mood_text: "test", intensity: 3, scene_category: "test" }));
-  window.setTimeout = callback => { queueMicrotask(callback); return 0; };
-  let generations = 0;
-  let saves = 0;
-  globalThis.fetch = async url => {
-    if (String(url).includes("analyze")) {
-      generations++;
-      return new Response(JSON.stringify({ ai_reply: "回应", ai_summary: "小结", ai_self_care_tips: "休息", ai_closing_message: "结尾", risk_level: "unknown", generation_status: "fallback" }), { headers: { "content-type": "application/json" } });
-    }
-    saves++;
-    return saves === 1 ? new Response("{}", { status: 503 }) : new Response('{"record_id":"42"}');
-  };
-  const page = AiReplyPage({ navigateTo() {}, request: (...args) => fetch(...args) });
-  document.body.append(page);
+  const calls = [];
+  const page = AiReplyPage({ navigateTo() {}, request: async url => {
+    calls.push(String(url));
+    return calls.length === 1 ? Response.json({ record_id: "42" }) : Response.json({ generation_status: "fallback" });
+  } });
   await tick();
-  assert.match(page.querySelector("[data-error-text]").textContent, /保存/);
-  assert.match(page.textContent, /未完成|通用|暂时/);
-  page.querySelector("[data-retry]").click();
-  await tick();
-  assert.equal(generations, 1);
-  assert.equal(saves, 2);
+  assert.match(calls[0], /\/api\/records$/);
+  assert.match(calls[1], /\/api\/records\/42\/analyze$/);
   page.destroy();
 });
