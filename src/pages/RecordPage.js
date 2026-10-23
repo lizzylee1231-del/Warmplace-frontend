@@ -110,7 +110,7 @@ export function RecordPage({ query, navigateTo, request = apiFetch }) {
       const recordId = await saveNote(pendingPayload, request);
       const payload = { ...pendingPayload, record_id: recordId };
       sessionStorage.setItem(AI_REQUEST_KEY, JSON.stringify(payload));
-      if (isActive) navigateTo("/ai-reply");
+      if (isActive) navigateTo(`/ai-reply?record_id=${encodeURIComponent(recordId)}`);
     } catch {
       if (isActive) {
         saveError.textContent = "记录未保存，请重试。你写下的内容还在这里。";
