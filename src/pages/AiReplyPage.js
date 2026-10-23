@@ -11,13 +11,6 @@ const ICONS = {
   record: "assets/icons/icon-record.png",
 };
 
-const DEFAULT_CARE_ITEMS = [
-  "给自己 10 分钟，做一次深呼吸",
-  "把想说的话写下来，交给纸张",
-  "今晚早点休息，身体也需要被照顾",
-  "可以听听喜欢的音乐，或慢慢散步",
-];
-
 const RISK_MESSAGES = {
   needs_attention: "这条记录里有一些需要多照看自己的信号。如果这种状态持续，找信任的人聊聊会更稳。",
   crisis: "如果你此刻有伤害自己或他人的念头，请立刻联系身边可信任的人，或拨打当地紧急求助电话。",
@@ -43,7 +36,7 @@ function readStoredPayload() {
 
 function splitCareTips(tips) {
   if (!tips) {
-    return DEFAULT_CARE_ITEMS;
+    return [];
   }
 
   const parsedTips = String(tips)
@@ -52,7 +45,7 @@ function splitCareTips(tips) {
     .filter(Boolean)
     .slice(0, 4);
 
-  return parsedTips.length ? parsedTips : DEFAULT_CARE_ITEMS;
+  return parsedTips;
 }
 
 function formatMainReply(data) {
@@ -108,7 +101,7 @@ function renderCareItems(items) {
     .join("");
 }
 
-export function AiReplyPage({ navigateTo, request = apiFetch }) {
+export function AiReplyPage({ query = new URLSearchParams(), navigateTo, request = apiFetch }) {
   const page = document.createElement("main");
   page.className = "page ai-reply-page";
   const abortController = new AbortController();
@@ -149,14 +142,12 @@ export function AiReplyPage({ navigateTo, request = apiFetch }) {
         <img class="ai-card-heart ai-card-heart-end" src="${ICONS.heart}" alt="" aria-hidden="true" />
       </article>
 
-      <aside class="ai-care-card ai-pixel-card" aria-labelledby="care-title">
+      <aside class="ai-care-card ai-pixel-card" aria-labelledby="care-title" data-care-card hidden>
         <h2 id="care-title">
           <img src="${ICONS.cup}" alt="" aria-hidden="true" />
           照顾自己
         </h2>
-        <ul data-care-list>
-          ${renderCareItems(DEFAULT_CARE_ITEMS)}
-        </ul>
+        <ul data-care-list></ul>
       </aside>
 
       <div class="ai-action-row">
@@ -173,10 +164,7 @@ export function AiReplyPage({ navigateTo, request = apiFetch }) {
   `;
 
   const payload = readStoredPayload();
-  if (payload && !payload.client_request_id) {
-    payload.client_request_id = window.crypto.randomUUID();
-    sessionStorage.setItem(AI_REQUEST_KEY, JSON.stringify(payload));
-  }
+  let recordId = query.get("record_id") || payload?.record_id;
   const emptyState = page.querySelector("[data-empty-state]");
   const riskArea = page.querySelector("[data-risk-area]");
   const messageCard = page.querySelector("[data-message-card]");
@@ -186,6 +174,7 @@ export function AiReplyPage({ navigateTo, request = apiFetch }) {
   const errorText = page.querySelector("[data-error-text]");
   const retryButton = page.querySelector("[data-retry]");
   const careList = page.querySelector("[data-care-list]");
+  const careCard = page.querySelector("[data-care-card]");
 
   let fullText = "";
   let completed = false;
@@ -236,8 +225,27 @@ export function AiReplyPage({ navigateTo, request = apiFetch }) {
     errorText.textContent = messageText;
   }
 
+  async function displayReply(data, animate) {
+    completed = true;
+    const careItems = splitCareTips(data.ai_self_care_tips);
+    careList.innerHTML = renderCareItems(careItems);
+    setElementVisible(careCard, careItems.length > 0);
+    const riskInfo = getRiskInfo(data.risk_level);
+    if (riskInfo) {
+      riskArea.innerHTML = renderRiskBanner(riskInfo);
+      riskArea.hidden = false;
+    }
+    setLoading(false);
+    if (animate) {
+      await appendWithTypewriter(formatMainReply(data));
+    } else {
+      fullText = formatMainReply(data);
+      updateMessage();
+    }
+  }
+
   async function requestAiReply() {
-    if (!payload) {
+    if (!recordId && !payload) {
       setElementVisible(messageCard, false);
       setElementVisible(emptyState, true);
       return;
@@ -252,16 +260,34 @@ export function AiReplyPage({ navigateTo, request = apiFetch }) {
     setElementVisible(error, false);
     riskArea.hidden = true;
     riskArea.innerHTML = "";
+    setElementVisible(careCard, false);
+    careList.innerHTML = "";
     setLoading(true);
 
+    let recordLoaded = false;
     try {
       // Support a reply tab opened before this release: save its note first, too.
-      if (!payload.record_id) {
-        payload.record_id = await saveNote(payload, request);
+      if (!recordId) {
+        payload.client_request_id ||= window.crypto.randomUUID();
+        sessionStorage.setItem(AI_REQUEST_KEY, JSON.stringify(payload));
+        recordId = await saveNote(payload, request);
+        payload.record_id = recordId;
         sessionStorage.setItem(AI_REQUEST_KEY, JSON.stringify(payload));
       }
       if (!isActive) return;
-      const response = await request(buildApiUrl(`/api/records/${encodeURIComponent(payload.record_id)}/analyze`), {
+      // The URL remains sufficient after refresh, even without a session payload.
+      window.history.replaceState(window.history.state, "", `#/ai-reply?record_id=${encodeURIComponent(recordId)}`);
+      const recordUrl = buildApiUrl(`/api/records/${encodeURIComponent(recordId)}`);
+      const storedResponse = await request(recordUrl, { signal: abortController.signal });
+      if (!storedResponse.ok) throw new Error("Record unavailable");
+      const record = await storedResponse.json();
+      if (!isActive) return;
+      recordLoaded = true;
+      if (record.ai_reply?.trim()) {
+        await displayReply(record, false);
+        return;
+      }
+      const response = await request(`${recordUrl}/analyze`, {
         method: "POST",
         signal: abortController.signal,
       });
@@ -276,22 +302,16 @@ export function AiReplyPage({ navigateTo, request = apiFetch }) {
         throw new Error("AI generation failed");
       }
       // This endpoint only succeeds after writing the reply to this saved record.
-      completed = true;
-      careList.innerHTML = renderCareItems(splitCareTips(data.ai_self_care_tips));
-      const riskInfo = getRiskInfo(data.risk_level);
-      if (riskInfo) {
-        riskArea.innerHTML = renderRiskBanner(riskInfo);
-        riskArea.hidden = false;
-      }
-      setLoading(false);
-      await appendWithTypewriter(formatMainReply(data));
+      await displayReply(data, true);
     } catch (requestError) {
       if (!isActive || requestError.name === "AbortError") {
         return;
       }
 
-      retryButton.textContent = payload.record_id ? "重试生成" : "重试保存";
-      showError(payload.record_id ? "回复没生成出来，记录已保存" : "记录未保存，请重试保存。");
+      retryButton.textContent = recordId ? (recordLoaded ? "重试生成" : "重试读取") : "重试保存";
+      showError(recordId
+        ? (recordLoaded ? "回复没生成出来，记录已保存" : "记录不存在或暂时无法读取，请稍后重试。")
+        : "记录未保存，请重试保存。");
     } finally {
       setLoading(false);
       inFlight = false;
